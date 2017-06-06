@@ -7,7 +7,7 @@
 #define ENABLE_FIFO_TX  1
 #define ENABLE_FIFO_RX  1
 
-#define FIFO_SIZE	        200     // UNIT: Byte
+#define FIFO_SIZE	        512     // UNIT: Byte
 
 //------------------------------------------------------------
 // FIFO Data Struct Type define.
@@ -43,6 +43,7 @@ void FiFoReset(void);
 
 void FiFoWriteTx(u8 *dat, IndexT cnt);
 IndexT FiFoReadTx(u8 *dat);
+IndexT FiFoReadTxBytes(u8 *dat, IndexT num);
 IndexT FiFoGetTxCount(void);
 
 void FiFoWriteRx(u8 *dat, IndexT cnt);

@@ -1,5 +1,6 @@
 
-// v0.0 2016-8-18
+// v0.1 2017-6-6
+// 1. Add FiFoReadTxBytes()
 
 #include "fifo.h"
 
@@ -60,6 +61,32 @@ IndexT FiFoReadTx(u8 *dat)
     IndexT index = 0, cnt = 0;
 	
 	for (cnt = 0; cnt < FIFO_SIZE; cnt++)
+	{
+	    index = FiFoChannel.transmit.count;
+		
+    	// Not Empty
+    	if (index)
+    	{
+    		FiFoChannel.transmit.count = (--index);	
+    		index = FiFoChannel.transmit.read_index;
+    		dat[cnt] = FiFoChannel.transmit.buffer[index];    		
+    		FiFoChannel.transmit.read_index = (index + 1) % sizeof(FiFoChannel.transmit.buffer);
+    	}
+    	else
+    	{
+    	    break;
+    	}
+	}
+	
+	return cnt;
+}
+
+// return bytes of the Tx FIFO with specified count.
+IndexT FiFoReadTxBytes(u8 *dat, IndexT num)
+{
+    IndexT index = 0, cnt = 0;
+	
+	for (cnt = 0; (cnt < FIFO_SIZE) && (num != 0); cnt++, num--)
 	{
 	    index = FiFoChannel.transmit.count;
 		

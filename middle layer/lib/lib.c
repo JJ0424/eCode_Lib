@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  lib.c
 / Author:     JiangJun
-/ Data:       2017/05/05
-/ Version:    v1.3
+/ Data:       2017/08/17
+/ Version:    v1.4
 /-----------------------------------------------------------------------^^-
 / converter with string and interger/ double/ float...
 / ----------------------
@@ -11,6 +11,9 @@
 / -----------------------
 / v1.3  
 / <1> FIX: fcvt/dfcvt output .xx when input 0.xx
+/ -----------------------
+/ v1.4  
+/ <1> UPDATE: modify fcvt/dfcvt output 0.00... when input 0.0f
 /------------------------------------------------------------------------*/
 
 #include "main.h"
@@ -144,6 +147,18 @@ void fcvt(float value, u8 ndigit, u8 *sign, u8* o_str)
     {
         o_str[0] = '0';
         cnt = 1;
+        
+        if (ndigit != 0)
+        {
+            // 添加.
+            o_str[cnt] = '.'; cnt++;
+            
+            // 添加小数点后面的0
+            for (idx = ndigit; idx != 0; idx--, cnt++) 
+            {
+                o_str[cnt] = '0';
+            }
+        }
     }
     else
     {
@@ -216,6 +231,18 @@ void dfcvt(double value, u8 ndigit, u8 *sign, u8* o_str)
     {   
         o_str[0] = '0';
         cnt = 1;
+        
+        if (ndigit != 0)
+        {
+            // 添加.
+            o_str[cnt] = '.'; cnt++;
+            
+            // 添加小数点后面的0
+            for (idx = ndigit; idx != 0; idx--, cnt++) 
+            {
+                o_str[cnt] = '0';
+            }
+        }
     }   
     else
     {

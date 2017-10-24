@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  common.c
 / Author:     JiangJun
-/ Data:       2017/08/21
-/ Version:    v1.2
+/ Data:       2017/10/24
+/ Version:    v1.3
 /-----------------------------------------------------------------------^^-
 / Common Functions
 / ---
@@ -12,6 +12,9 @@
 / ---
 / v1.2 2017/08/21
 / [1] Add STM8S005(16MHz) Test
+/ ---
+/ v1.3 2017/10/24
+/ [1] XorCheckSum(u8 *input, u16 length) to XorCheckSum(u8 *input, u32 length)
 /------------------------------------------------------------------------*/
 
 
@@ -27,9 +30,9 @@
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-u8 XorCheckSum(u8 *input, u16 length)
+u8 XorCheckSum(u8 *input, u32 length)
 {
-    u16 idx = 0; u8 xorResult = 0;
+    u32 idx = 0; u8 xorResult = 0;
     
     // !! Initialize the reseut with the 'array[0]' !!
     xorResult = input[0];

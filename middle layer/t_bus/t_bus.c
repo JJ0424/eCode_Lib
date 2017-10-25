@@ -24,6 +24,9 @@
 / v1.1 [2017-10-19]
 / 1. remove port function(TBusTx/TBusGetRxCount/TBusReadRxByte)
 / 2. protocal to v1.1
+/ ---
+/ v1.2 [2017-10-20]
+/ 1. add TBusPktToPload()
 /------------------------------------------------------------------------*/
 
 #include "t_bus.h"
@@ -130,6 +133,46 @@ void TBusEncPkg(TBusTxPkgT *pkg)
     }
     
 }
+
+/*----------------------------------------------------------------------
+ *  TBusPktToPload - encode the raw packet to array payload
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void TBusPktToPload(TBusTxPkgT *pkg, u8 *payload, u16 *size)
+{
+
+    u8 buf[T_BUS_BYTE_BUFFER_SIZE];
+    
+    //------------------------------------------------------------
+    // Header
+    //------------------------------------------------------------
+    buf[TBUS_STX_OFFSET] = TBUS_STX;                                // start flag
+    
+    *((u16*)&buf[TBUS_PAD_LEN_OFFSET]) = pkg->dat_len;              // payload length    
+    
+    TBUS_LOOP_SEP_SET(buf[TBUS_LOOP_SEQ_OFFSET], TbusSeq++);        // loop seq             
+    buf[TBUS_PKG_ID_OFFSET] = pkg->pkg_id;                          // message ID
+    
+    // Payload Field
+    memcpy(&buf[T_BUS_HEADER_SIZE], &pkg->payload[0], pkg->dat_len);
+    
+    // CheckSum Field
+    buf[T_BUS_HEADER_SIZE + pkg->dat_len] = XorCheckSum(buf, T_BUS_HEADER_SIZE + pkg->dat_len);
+
+    
+    //------------------------------------------------------------
+    // Write to payload
+    //------------------------------------------------------------
+
+    *size = pkg->dat_len + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ;          // size of payload
+    memcpy(payload, buf, *size);                                        // data of payload
+    
+}
+
 
 /*----------------------------------------------------------------------
  *  TBusDecPkg - decode the buffer to packet.

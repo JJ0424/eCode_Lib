@@ -28,7 +28,7 @@
 #define T_BUS_MAX_PAYLOAD_SIZE          520         // UNIT: Byte
 
 // Protocal version
-#define T_BUS_VER                       0x110       // v1.10
+#define T_BUS_VER                       0x100       // v1.00
 
 
 //------------------------------------------------------------
@@ -47,6 +47,8 @@
   #define T_BUS_HEADER_SIZE     4
   #define T_BUS_END_SIEZ        1
 #endif
+
+#define T_BUS_FIXED_SIZE        (T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)
 
 #define T_BUS_BYTE_BUFFER_SIZE        (T_BUS_MAX_PAYLOAD_SIZE + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)  // Header + Payload + checksum(1 byte)
 
@@ -97,6 +99,7 @@ extern void TBusInit(fpTBusTx fp_tbus_tx, fpTBusReadRxByte fp_rx_byte, fpTBusGet
 extern void TBusEncPkg(TBusTxPkgT *pkg);
 extern Bool TBusDecPkg(u8 *src, u16 len, TBusRxPkgT *pkg);
 extern Bool TBusGetPkg(TBusRxPkgT *pkg);
+extern void TBusPktToPload(TBusTxPkgT *pkg, u8 *payload, u16 *size);
 
 
  

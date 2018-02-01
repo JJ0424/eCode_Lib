@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  lib.c
 / Author:     JiangJun
-/ Data:       2017/08/17
-/ Version:    v1.4
+/ Data:       2018/01/31
+/ Version:    v1.5
 /-----------------------------------------------------------------------^^-
 / converter with string and interger/ double/ float...
 / ----------------------
@@ -14,6 +14,9 @@
 / -----------------------
 / v1.4  
 / <1> UPDATE: modify fcvt/dfcvt output 0.00... when input 0.0f
+/ -----------------------
+/ v1.5
+/ <1> FIX: dfcvt/fcvt, input -0.05/0.05(ndigit = 6) will output 5xxxx...
 /------------------------------------------------------------------------*/
 
 #include "main.h"
@@ -170,7 +173,7 @@ void fcvt(float value, u8 ndigit, u8 *sign, u8* o_str)
         middle = (u32)(value * (float)scales);
 
         // 按位移出，逆序
-        for (idx = 0, cnt = 0; middle != 0; idx++)
+        for (idx = 0, cnt = 0; (middle != 0) || (cnt < ndigit); idx++)
         {
             o_str[idx] = DECIMAL_TO_ASCII(middle % 10);
             middle /= 10;
@@ -254,7 +257,7 @@ void dfcvt(double value, u8 ndigit, u8 *sign, u8* o_str)
         middle = (u32)(value * (double)scales);
 
         // 按位移出，逆序
-        for (idx = 0, cnt = 0; middle != 0; idx++)
+        for (idx = 0, cnt = 0; (middle != 0) || (cnt < ndigit); idx++)
         {
             o_str[idx] = DECIMAL_TO_ASCII(middle % 10);
             middle /= 10;

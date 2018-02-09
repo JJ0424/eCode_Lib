@@ -2,11 +2,41 @@
 /*------------------------------------------------------^-^/
 / File name:  shortcuts.em
 / Author:     JiangJun
-/ Data:       2018/01/30
-/ Version:    V1.1
+/ Data:       2018/02/09
+/ Version:    V1.2
 /-------------------------------------------------------^-^/
 / Shortcuts withe the source insight
 /---------------------------------------------------------*/
+
+/*------------------------------------------------------------
+ *  Function Names:     macro_parh_get_file_name()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:             c:\aa\bb\cc.c will return cc.c as file
+ *                      name.
+ *------------------------------------------------------------*/
+macro macro_parh_get_file_name(path_name)
+{
+    var length;
+    var return_value;
+
+    return_value = nil;
+    length = strlen(path_name);
+    while (length > 0)
+    {
+        char = path_name[length - 1];
+        if (char != "\\")
+        {
+            return_value = char # return_value;
+        }
+        else
+        {
+            return return_value;
+        }
+        length--;
+    }
+    return return_value;
+}
 
 /*------------------------------------------------------------
  *  Function Names:     macro_get_file_name()
@@ -25,7 +55,8 @@ macro macro_get_file_name()
 	}
 
 	/* Get file name, include extension */
-	name = GetBufName(hbuf);
+	path = GetBufName(hbuf);
+	name = macro_parh_get_file_name(path);
 
 	index = "0";
 
@@ -267,7 +298,7 @@ macro Insrt_file_header()
     /* File buffer handler */
     var hbuf;
     var line_number;
-    var file_name, date;
+    var file_name, date, path;
 
     /* Get the handler to current file,
        this file is the most-front file,
@@ -282,7 +313,8 @@ macro Insrt_file_header()
 	line_number = 0;
 
 	/* Get the file name */
-	file_name = GetBufName(hbuf);
+	path = GetBufName(hbuf);
+	file_name = macro_parh_get_file_name(path);
 	date = macro_get_date();	
 	
 	/* Insert Function Header */

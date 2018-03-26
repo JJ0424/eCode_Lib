@@ -228,7 +228,7 @@ macro Insrt_ifdef()
     }
 
     /* Get the count of the file line. */
-	line_number = GetBufLnCur(hbuf)
+	line_number = GetBufLnCur(hbuf);
 
 	/* Insert #idndef/ #define/ #endif */
 	if (line_number == 0)
@@ -269,7 +269,7 @@ macro Insrt_func_header()
     }
 
     /* Get the count of the file line. */
-	line_number = GetBufLnCur(hbuf)
+	line_number = GetBufLnCur(hbuf);
 
 	/* Get the function name */
 	line_text = GetBufLine(hbuf, line_number + 1);		// the next line
@@ -327,6 +327,68 @@ macro Insrt_file_header()
     InsBufLine(hbuf, line_number + 6, "/");
     InsBufLine(hbuf, line_number + 7, "/------------------------------------------------------------------------*/");
     DelBufLine(hbuf, line_number + 8);
+}
+
+/*------------------------------------------------------------
+ *  Function Names:     Insrt_block_comment()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            Put the cursor in anywhere.
+ *------------------------------------------------------------*/
+macro Insrt_block_comment()
+{
+    /* File buffer handler */
+    var hbuf;
+    var line_number;
+
+    /* Get the handler to current file,
+       this file is the most-front file,
+       if has no file open, return nil. */
+    hbuf = GetCurrentBuf();
+    if (hbuf == nil)
+    {
+        return;
+    }
+
+    /* Get the count of the file line. */
+	line_number = GetBufLnCur(hbuf);	
+	
+	/* Insert Function Header */
+	InsBufLine(hbuf, line_number + 0, "//-------------------------------------------------------");
+    InsBufLine(hbuf, line_number + 1, "//              BLOCK COMMENT");
+    InsBufLine(hbuf, line_number + 2, "//-------------------------------------------------------");
+    DelBufLine(hbuf, line_number + 3);
+}
+
+/*------------------------------------------------------------
+ *  Function Names:     Insrt_field_comment()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            Put the cursor in anywhere.
+ *------------------------------------------------------------*/
+macro Insrt_field_comment()
+{
+    /* File buffer handler */
+    var hbuf;
+    var line_number;
+
+    /* Get the handler to current file,
+       this file is the most-front file,
+       if has no file open, return nil. */
+    hbuf = GetCurrentBuf();
+    if (hbuf == nil)
+    {
+        return;
+    }
+
+    /* Get the count of the file line. */
+	line_number = GetBufLnCur(hbuf);	
+	
+	/* Insert Function Header */
+	InsBufLine(hbuf, line_number + 0, "//------------------------------------------------------------");
+    InsBufLine(hbuf, line_number + 1, "//              FIELD COMMENT");
+    InsBufLine(hbuf, line_number + 2, "//------------------------------------------------------------");
+    DelBufLine(hbuf, line_number + 3);
 }
 
 //--------------------------------------------------

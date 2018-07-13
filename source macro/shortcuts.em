@@ -211,13 +211,41 @@ macro macro_insrt_ifdef(hbuf)
 	/* Insert #idndef/ #define/ #endif */
 	if (line_number == 1)
 	{
-		name = macro_get_file_name();		
+
+		/* Get file name, include extension */
+		path = GetBufName(hbuf);
+		name = macro_parh_get_file_name(path);
+
+		index = "0";
+
+		/* Get file name */
+		file_name = nil;
+		while (name[index] != ".")
+		{
+		    file_name = file_name # name[index];
+		    index++;
+		}
+
+		/* Get extension */
+		file_extension = nil;
+		while (name[index] != nil)
+		{
+		    if (name[index] != ".")
+		        file_extension= file_extension # name[index];
+		    index++;
+		}
+
+		/* Convert to upper */
+		file_name = ToUpper(file_name);
+		file_extension = ToUpper(file_extension);
+
+		name = "_" # file_name # "_" # file_extension;
 	}
 	else
 	{
 		name = "_XXX_H";
 	}
-
+	
 	InsBufLine(hbuf, line_number, 		"#ifndef " # name);
 	InsBufLine(hbuf, line_number + 1, 	"#define " # name);
 	InsBufLine(hbuf, line_number + 2, 	"");

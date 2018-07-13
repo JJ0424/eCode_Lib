@@ -2,8 +2,8 @@
 /*------------------------------------------------------^-^/
 / File name:  shortcuts.em
 / Author:     JiangJun
-/ Data:       2018/02/09
-/ Version:    V1.2
+/ Data:       2018/07/13
+/ Version:    V1.3
 /-------------------------------------------------------^-^/
 / Shortcuts withe the source insight
 /---------------------------------------------------------*/
@@ -147,6 +147,82 @@ macro macro_get_date()
     day = system.day;    
 
    	return ("@year@/@month@/@day@");
+}
+
+/*------------------------------------------------------------
+ *  Function Names:     macro_get_date()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            None
+ *------------------------------------------------------------*/
+macro macro_insert_file_header(hbuf)
+{
+
+	/* Get the count of the file line. */
+	line_number = 1;
+
+	/* Get the file name */
+	path = GetBufName(hbuf);
+	file_name = macro_parh_get_file_name(path);
+	date = macro_get_date();
+
+	/* Insert Function Header */
+	InsBufLine(hbuf, line_number + 0, "/*----------------------------------------------------------------------^^-");
+	InsBufLine(hbuf, line_number + 1, "/ File name:  @file_name@");
+	InsBufLine(hbuf, line_number + 2, "/ Author:     JiangJun");
+	InsBufLine(hbuf, line_number + 3, "/ Data:       @date@");
+	InsBufLine(hbuf, line_number + 4, "/ Version:    v1.0");
+	InsBufLine(hbuf, line_number + 5, "/-----------------------------------------------------------------------^^-");
+	InsBufLine(hbuf, line_number + 6, "/");
+	InsBufLine(hbuf, line_number + 7, "/------------------------------------------------------------------------*/");
+	InsBufLine(hbuf, line_number + 8, "");	
+}
+
+/*------------------------------------------------------------
+ *  Function Names:     macro_insrt_file_end()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            Put the cursor in anywhere.
+ *------------------------------------------------------------*/
+macro macro_insrt_file_end(hbuf)
+{    
+
+    /* Get the count of the file line. */
+    line_number = GetBufLineCount(hbuf);
+
+    /* Insert String */
+    InsBufLine(hbuf, line_number + 0, "//---------------------------------------------------------------------------//");
+    InsBufLine(hbuf, line_number + 1, "//----------------------------- END OF FILE ---------------------------------//");
+    InsBufLine(hbuf, line_number + 2, "//---------------------------------------------------------------------------//");
+}
+
+/*------------------------------------------------------------
+ *  Function Names:     macro_insrt_ifdef()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            Put the cursor in anywhere.
+ *------------------------------------------------------------*/
+macro macro_insrt_ifdef(hbuf)
+{    
+
+    /* Get the count of the file line. */
+	line_number = GetBufLineCount(hbuf);
+
+	/* Insert #idndef/ #define/ #endif */
+	if (line_number == 1)
+	{
+		name = macro_get_file_name();		
+	}
+	else
+	{
+		name = "_XXX_H";
+	}
+
+	InsBufLine(hbuf, line_number, 		"#ifndef " # name);
+	InsBufLine(hbuf, line_number + 1, 	"#define " # name);
+	InsBufLine(hbuf, line_number + 2, 	"");
+	InsBufLine(hbuf, line_number + 3, 	"#endif");
+	InsBufLine(hbuf, line_number + 4, 	""); 
 }
  
 /*------------------------------------------------------------
@@ -390,6 +466,44 @@ macro Insrt_field_comment()
     InsBufLine(hbuf, line_number + 2, "//------------------------------------------------------------");
     DelBufLine(hbuf, line_number + 3);
 }
+
+/*------------------------------------------------------------
+ *  Function Names:     prj_create_xxc_xxh()
+ *  Parameter:          None
+ *  Return Value:       None
+ *  Remarks:            Put the cursor in anywhere.
+ *------------------------------------------------------------*/
+macro prj_create_xxc_xxh()
+{
+
+	// Create '.c' File
+	hbuf = NewBuf(".c");
+
+	// Save the File
+	SaveBuf(hbuf);
+	
+	// Insert File Header and Comment
+	macro_insert_file_header(hbuf);
+	macro_insrt_file_end(hbuf);
+
+	// Sync to the File
+	SaveBuf(hbuf); CloseBuf(hbuf);
+
+	// Create '.h' File
+	hbuf = NewBuf(".h");
+
+	// Save the File
+	SaveBuf(hbuf);
+
+	// Insert Infomations
+	macro_insrt_ifdef(hbuf);
+	macro_insert_file_header(hbuf);
+	macro_insrt_file_end(hbuf);
+
+	// Sync to the File
+	SaveBuf(hbuf); CloseBuf(hbuf);
+}
+
 
 //--------------------------------------------------
 //---------------- End of file ---------------------

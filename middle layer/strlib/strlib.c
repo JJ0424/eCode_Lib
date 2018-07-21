@@ -1,6 +1,6 @@
 
 
-// v1.0 [2017-10-19]
+// v1.1 [2018-07-21]
 
 #include "strlib.h"
 
@@ -90,4 +90,31 @@ s16 _strstr(u8 *str, u16 str_len, const u8 *str_2)
     }        
     
     return -1;    
+}
+
+//------------------------------------------------------------
+// Trim string with the 'trim' characters
+// return: the length of trimed
+//------------------------------------------------------------
+u16 _strtrim(u8 *str, const u8 *trim)
+{
+    u16 idx_s = 0, idx_t = 0, cnt = 0, len_s = 0, len_t = 0;
+    u8 *p_str = str; const u8 *p_trim = trim;
+
+    // string length
+    len_s = _strlen(p_str); len_t = _strlen((u8 *)p_trim);
+
+    // trim
+    for (idx_s = 0; idx_s < len_s; idx_s++)
+    {
+        for (idx_t = 0; idx_t < len_t; idx_t++) 
+        {
+            if (p_str[idx_s] == p_trim[idx_t]) { break; }
+		}
+
+		// copy to str
+		if (idx_t >= len_t) { p_str[cnt++] = p_str[idx_s]; }
+    }
+
+    return cnt;
 }

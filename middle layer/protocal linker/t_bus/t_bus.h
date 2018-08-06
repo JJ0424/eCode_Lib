@@ -2,10 +2,10 @@
 /*----------------------------------------------------------------------^^-
 / File name:  t_bus.h
 / Author:     JiangJun
-/ Data:       2017/10/19
-/ Version:    v1.1
+/ Data:       2018/08/03
+/ Version:    v2.0
 /-----------------------------------------------------------------------^^-
-/  T-BUS receiver
+/ T-BUS Driver
 /------------------------------------------------------------------------*/
 
 #ifndef _T_BUS_H
@@ -15,97 +15,90 @@
 
 
 //------------------------------------------------------------
-// Configuartion
+//                      CONFIG
 //------------------------------------------------------------
-
-// Device Define
-#define TBUS_STX                        '#'
-
-// T-BUS Function Enable/Disable
-#define T_BUS_ENABLE_LOOP_SEQ           0
-
-// T-Bus Packet Buffer Size
-#define T_BUS_MAX_PAYLOAD_SIZE          520         // UNIT: Byte
 
 // Protocal version
-#define T_BUS_VER                       0x100       // v1.00
-
-
-//------------------------------------------------------------
-// Protocal Constants
-//
-// v1.1
-// 
-//  0       1      2      3    [4-65539]
-// '#'  + size_L size_H + ID + Payload(0-65535) + checksum
-//------------------------------------------------------------
-
-#if T_BUS_ENABLE_LOOP_SEQ
-  #define T_BUS_HEADER_SIZE     5
-  #define T_BUS_END_SIEZ        1
-#else 
-  #define T_BUS_HEADER_SIZE     4
-  #define T_BUS_END_SIEZ        1
-#endif
-
-#define T_BUS_FIXED_SIZE        (T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)
-
-#define T_BUS_BYTE_BUFFER_SIZE        (T_BUS_MAX_PAYLOAD_SIZE + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)  // Header + Payload + checksum(1 byte)
-
-// T-Bus Tx Packet
-typedef struct {
-
-    u8 pkg_id;
-    u16 dat_len;
-
-#if T_BUS_ENABLE_LOOP_SEQ    
-    u8 seq;
-#endif
-
-    u8 payload[T_BUS_MAX_PAYLOAD_SIZE];
-    
-} TBusTxPkgT;
-
-// T-Bus Rx Packet
-typedef struct {
-
-    u8 pkg_id;
-    u16 dat_len;
-    
-#if T_BUS_ENABLE_LOOP_SEQ    
-    u8 seq;
-#endif    
-    
-    u8 payload[T_BUS_MAX_PAYLOAD_SIZE];
-    
-} TBusRxPkgT;
+#define _T_BUS_VER                  0x20        // v2.0
 
 
 //------------------------------------------------------------
 // Port Functions(extern support)
 //------------------------------------------------------------
 
-// Tx data to hardware
+// Tx bytes to Hardware
 typedef void (*fpTBusTx)(u8 *, u16);
 
 // Get Rx count
 typedef u16 (*fpTBusGetRxCount)(void);
 
-// Get one byte from Hardware
-typedef u8 (*fpTBusReadRxByte)(u8 *);
+// Rx bytes from Hardware
+typedef u16 (*fpTBusReadRxByte)(u8 *, u16);
 
 
-extern void TBusInit(fpTBusTx fp_tbus_tx, fpTBusReadRxByte fp_rx_byte, fpTBusGetRxCount fp_get_cnt);
-extern void TBusEncPkg(TBusTxPkgT *pkg);
-extern Bool TBusDecPkg(u8 *src, u16 len, TBusRxPkgT *pkg);
-extern Bool TBusGetPkg(TBusRxPkgT *pkg);
-extern void TBusPktToPload(TBusTxPkgT *pkg, u8 *payload, u16 *size);
+//------------------------------------------------------------
+// Protocal Constants
+//
+// v2.0
+// 
+//      N        N+1    N+2        N+3       N+4     N+5                 (1)
+//  ["HEADER"] [size_L size_H] [loop_idx] [ver_ID] [pkt_ID] [payload] [xor_chk]
+//------------------------------------------------------------
 
+#pragma pack(push)
+#pragma pack(1)
 
+// T-Bus Fix Field
+typedef struct {
+
+    u16 size;
+    u8 loop_idx;
+    u8 ver_ID;
+    u8 pkt_ID;
+    
+} TBusFixFieldT;
+
+// T-Bus Packet
+typedef struct {
+
+    u8 *head; u8 head_size;
+    TBusFixFieldT fix;
+    u8 *payload;
+    u8 xor_chk;
+    
+} TBusPktT;
+
+#pragma pack(pop) /* TBusPktT */
+
+// T-Bus Work
+typedef struct {
+
+    // must set !!
+    u8 *head;
+    u8 head_size;
+    u8 *tx_buff, *rx_buff;
+    u16 buff_len;
+
+    // w/r pointer, must set !!
+    fpTBusTx fp_tx;    
+    fpTBusReadRxByte fp_rx;
+    fpTBusGetRxCount fp_rx_cnt;
+
+    // loop index, not set.
+    u8 loop_idx;
+
+    // pause var, not set.
+    u16 rx_cnt, pld_len;
+        
+} TBusWorkT;
+
+extern void TBusInit(TBusWorkT *work, const u8 *header);
+extern _bool TBusTxPkt(TBusWorkT *work, u8 pkt_id, u8 *src, u16 cnt);
+extern _bool TBusArrayToPkt(u8 *header, u8 *src, u16 cnt, TBusPktT *pkt);
+extern _bool TBusPausePkt(TBusWorkT *work, TBusPktT *pkt);
  
 #endif
 
-
-//--------------------------------------------------
-//---------------- End of file ---------------------
-//--------------------------------------------------
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

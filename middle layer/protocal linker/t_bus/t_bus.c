@@ -2,10 +2,10 @@
 /*----------------------------------------------------------------------^^-
 / File name:  t_bus.c
 / Author:     JiangJun
-/ Data:       2017/10/19
-/ Version:    v1.1
+/ Data:       2018/08/03
+/ Version:    v2.0
 /-----------------------------------------------------------------------^^-
-/  T-BUS receiver
+/ T-BUS Driver
 / ---
 / v0.0 2017/04/14
 / ---
@@ -27,54 +27,15 @@
 / ---
 / v1.2 [2017-10-20]
 / 1. add TBusPktToPload()
+/ ---
+/ v2.0 [2018-8-3]
+/ 1. t_bus.c/.h to common protocal
 /------------------------------------------------------------------------*/
 
 #include "t_bus.h"
 
-#include "string.h"
 #include "common.h"
-
-
-//------------------------------------------------------------
-// Packet Constant
-//------------------------------------------------------------
-
-
-#define TBUS_STX_OFFSET                     0
-#define TBUS_PAD_LEN_OFFSET                 1       // 2-bytes payload length
-#define TBUS_PAD_LEN_SIZE                   2       // size_L size_H
-
-#if T_BUS_ENABLE_LOOP_SEQ
-
-  #define TBUS_LOOP_SEQ_OFFSET              3
-  #define TBUS_PKG_ID_OFFSET                (TBUS_LOOP_SEQ_OFFSET + 1)
-  #define TBUS_LOOP_SEP_SET(buffer, val)    buffer = val;    
-  
-#else
-  
-  #define TBUS_LOOP_SEQ_OFFSET              3
-  #define TBUS_PKG_ID_OFFSET                TBUS_LOOP_SEQ_OFFSET
-  #define TBUS_LOOP_SEP_SET(buffer, val)    ;      
-#endif
-
-
-//------------------------------------------------------------
-// Private variables
-//------------------------------------------------------------
-
-#if T_BUS_ENABLE_LOOP_SEQ
-
-  static u8 TbusSeq = 0;
-  
-#endif
-
-//------------------------------------------------------------
-// Port Function
-//------------------------------------------------------------
-
-static fpTBusTx FpTBusTx = NULL; static fpTBusGetRxCount FpTBusGetRxCount = NULL;
-static fpTBusReadRxByte FpTBusReadRxByte = NULL;
-
+#include "strlib.h"
 
 
 /*----------------------------------------------------------------------
@@ -85,183 +46,224 @@ static fpTBusReadRxByte FpTBusReadRxByte = NULL;
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-void TBusInit(fpTBusTx fp_tbus_tx, fpTBusReadRxByte fp_rx_byte, fpTBusGetRxCount fp_get_cnt)
+void TBusInit(TBusWorkT *work, const u8 *header)
 {
 
-    FpTBusTx = fp_tbus_tx;
-    FpTBusGetRxCount = fp_get_cnt;
-    FpTBusReadRxByte = fp_rx_byte;
+    work->loop_idx = 0;
+    work->head = (u8 *)header;
     
+    // header size
+    if (work->head != 0) {
+
+        work->head_size = _strlen(work->head);
+    }
+    else {
+
+        work->head_size = 0;
+    }
+
+    work->rx_cnt = 0; work->pld_len = 0;
 }
 
 /*----------------------------------------------------------------------
- *  TBusEncPkg - encode the raw packet to Link Packet
+ *  TBusTxPkt --- [WORK] -> [PKT] -> [UART]
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-void TBusEncPkg(TBusTxPkgT *pkg)
+_bool TBusTxPkt(TBusWorkT *work, u8 pkt_id, u8 *src, u16 cnt)
 {
 
-    u8 buf[T_BUS_BYTE_BUFFER_SIZE];
-    
+    TBusPktT tx_pkt; u16 idx = 0; TBusWorkT *work_tmp = work;
+
+
     //------------------------------------------------------------
-    // Header
+    // CHECK
     //------------------------------------------------------------
-    buf[TBUS_STX_OFFSET] = TBUS_STX;                                // start flag
     
-    *((u16*)&buf[TBUS_PAD_LEN_OFFSET]) = pkg->dat_len;              // payload length    
+    if ((work_tmp->head_size + sizeof(TBusFixFieldT) + cnt + 1) > work_tmp->buff_len)
+    {
+
+        return FALSE;
+    }
+
+
+    //------------------------------------------------------------
+    // To BuF
+    //------------------------------------------------------------
     
-    TBUS_LOOP_SEP_SET(buf[TBUS_LOOP_SEQ_OFFSET], TbusSeq++);        // loop seq             
-    buf[TBUS_PKG_ID_OFFSET] = pkg->pkg_id;                          // message ID
+    // header
+    tx_pkt.head = work_tmp->head; tx_pkt.head_size = work_tmp->head_size;
     
-    // Payload Field
-    memcpy(&buf[T_BUS_HEADER_SIZE], &pkg->payload[0], pkg->dat_len);
-    
-    // CheckSum Field
-    buf[T_BUS_HEADER_SIZE + pkg->dat_len] = XorCheckSum(buf, T_BUS_HEADER_SIZE + pkg->dat_len);
-    
+    tx_pkt.fix.size = cnt; tx_pkt.fix.loop_idx = work_tmp->loop_idx++;
+    tx_pkt.fix.ver_ID = _T_BUS_VER; tx_pkt.fix.pkt_ID = pkt_id;
+    tx_pkt.payload = src;
+
+    // [to work buff]
+    _memcpy(&work_tmp->tx_buff[idx], tx_pkt.head, tx_pkt.head_size); idx += tx_pkt.head_size;
+    _memcpy(&work_tmp->tx_buff[idx], (u8 *)&tx_pkt.fix, sizeof(TBusFixFieldT)); idx += sizeof(TBusFixFieldT);
+    _memcpy(&work_tmp->tx_buff[idx], tx_pkt.payload, tx_pkt.fix.size); idx += tx_pkt.fix.size;
+
+    // XOR check
+    tx_pkt.xor_chk = XorCheckSum(work_tmp->tx_buff, idx);    
+    work_tmp->tx_buff[idx] = tx_pkt.xor_chk; idx += 1;
+
+
     //------------------------------------------------------------
     // Write Tx FIFO
     //------------------------------------------------------------
-    
-    if (FpTBusTx != NULL) 
+
+    if (work_tmp->fp_tx != 0)
     {
-        (*FpTBusTx)(buf, T_BUS_HEADER_SIZE + pkg->dat_len + T_BUS_END_SIEZ); 
+
+        (*work_tmp->fp_tx)(work_tmp->tx_buff, idx);
     }
-    
-}
-
-/*----------------------------------------------------------------------
- *  TBusPktToPload - encode the raw packet to array payload
- *
- *  Purpose: None.
- *  Entry:   None.
- *  Exit:    None.
- *  NOTE:    None.
- *---------------------------------------------------------------------*/
-void TBusPktToPload(TBusTxPkgT *pkg, u8 *payload, u16 *size)
-{
-
-    u8 buf[T_BUS_BYTE_BUFFER_SIZE];
-    
-    //------------------------------------------------------------
-    // Header
-    //------------------------------------------------------------
-    buf[TBUS_STX_OFFSET] = TBUS_STX;                                // start flag
-    
-    *((u16*)&buf[TBUS_PAD_LEN_OFFSET]) = pkg->dat_len;              // payload length    
-    
-    TBUS_LOOP_SEP_SET(buf[TBUS_LOOP_SEQ_OFFSET], TbusSeq++);        // loop seq             
-    buf[TBUS_PKG_ID_OFFSET] = pkg->pkg_id;                          // message ID
-    
-    // Payload Field
-    memcpy(&buf[T_BUS_HEADER_SIZE], &pkg->payload[0], pkg->dat_len);
-    
-    // CheckSum Field
-    buf[T_BUS_HEADER_SIZE + pkg->dat_len] = XorCheckSum(buf, T_BUS_HEADER_SIZE + pkg->dat_len);
-
-    
-    //------------------------------------------------------------
-    // Write to payload
-    //------------------------------------------------------------
-
-    *size = pkg->dat_len + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ;          // size of payload
-    memcpy(payload, buf, *size);                                        // data of payload
-    
-}
-
-
-/*----------------------------------------------------------------------
- *  TBusDecPkg - decode the buffer to packet.
- *
- *  Purpose: None.
- *  Entry:   None.
- *  Exit:    None.
- *  NOTE:    None.
- *---------------------------------------------------------------------*/
-Bool TBusDecPkg(u8 *src, u16 len, TBusRxPkgT *pkg)
-{    
-    
-    // Total bytes check
-    if (len > (T_BUS_MAX_PAYLOAD_SIZE + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)) { return FALSE; }
-    
-    // CheckSum
-    if (src[len - T_BUS_END_SIEZ] != XorCheckSum(src, len - T_BUS_END_SIEZ)) { return FALSE; }
-    
-    // Payload Fill    
-    pkg->dat_len = *((u16*)&src[TBUS_PAD_LEN_OFFSET]);              // payload length
-    TBUS_LOOP_SEP_SET(pkg->seq, src[TBUS_LOOP_SEQ_OFFSET]);         // loop seq     
-    pkg->pkg_id = src[TBUS_PKG_ID_OFFSET];                          // message ID
-    
-    // Payload length check
-    if (pkg->dat_len != (len - T_BUS_HEADER_SIZE - T_BUS_END_SIEZ)) { return FALSE; }
-    
-    //------------------------------------------------------------
-    // Payload
-    //------------------------------------------------------------
-    memcpy(&pkg->payload[0], &src[T_BUS_HEADER_SIZE], pkg->dat_len);    
     
     return TRUE;
 }
 
 /*----------------------------------------------------------------------
- *  TBusGetPkg - Get a packet from the FIFO Buffer.
+ *  TBusArrayToPkt --- [UART] -> [WORK] -> [PKT]
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-Bool TBusGetPkg(TBusRxPkgT *pkg)
-{    
+_bool TBusArrayToPkt(u8 *header, u8 *src, u16 cnt, TBusPktT *pkt)
+{
 
-    static u8 buf[T_BUS_BYTE_BUFFER_SIZE]; static u16 cnt = 0, pld_len = 0;
-	u8 dat;
+    s16 idx = 0; u8 *src_tmp = src; u16 pkt_cnt = 0;
+
+
+    //------------------------------------------------------------
+    // Pause Header
+    //------------------------------------------------------------
+    
+    // Get "Header" index
+    idx = _strstr(src, cnt, header);
+    if (idx < 0) 
+    { 
+        return FALSE; 
+    }
+    
+
+    //------------------------------------------------------------
+    // To Pkt
+    //------------------------------------------------------------
+    
+    // [to pkt]
+    pkt->head = header; pkt->head_size = _strlen(header); pkt_cnt += pkt->head_size;
+    pkt->fix = *((TBusFixFieldT *)(src_tmp + pkt_cnt + idx)); pkt_cnt += sizeof(TBusFixFieldT);
+    pkt->payload = src_tmp + pkt_cnt + idx; pkt_cnt += pkt->fix.size;
+    pkt->xor_chk = *(src_tmp + pkt_cnt + idx);
+
+    if (pkt->xor_chk != XorCheckSum(src_tmp + idx, pkt_cnt)) { return FALSE; }        
+    pkt_cnt += 1;
+        
+
+    //------------------------------------------------------------
+    // CHECK
+    //------------------------------------------------------------
+
+    if (pkt_cnt > cnt) { return FALSE; }
+    return TRUE;
+}
+
+/*----------------------------------------------------------------------
+ *  TBusPausePkt - pause one packet
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *
+ *  NOTE:    Example(Header: #TBUS):
+ *                                  (1) #TBUS...
+ *                                  (2) 1234XXX#TBUS...
+ *                                  (3) ##TBUS...
+ *                                  (4) XXXX###TBUS...
+ *---------------------------------------------------------------------*/
+_bool TBusPausePkt(TBusWorkT *work, TBusPktT *pkt)
+{    
+    
+	u8 dat[1]; u16 cnt = 0;
 
 
 	//------------------------------------------------------------
-    // Port Function detect
+    //                      CHECK
     //------------------------------------------------------------
 
-    if (FpTBusGetRxCount == NULL) { return FALSE; }
-
-    if (FpTBusReadRxByte == NULL) { return FALSE; }
+    if ((work->fp_rx == 0) || (work->fp_rx_cnt == 0)) {
+        return FALSE;
+    }
 
 
     //------------------------------------------------------------
-    // Rx with buffer
+    //                      B2B Read
     //------------------------------------------------------------
     
-    for (; ; )
-    {       
-        if ((*FpTBusGetRxCount)() == 0) return FALSE;                   // NO data in buffer.
-            
-        if ((*FpTBusReadRxByte)(&dat) != 1) return FALSE;               // No data in buffer.
+    for (cnt = (*work->fp_rx_cnt)(); ; cnt--)
+    {
 
-        
-        if ((cnt == 0) && (dat != TBUS_STX))                            // Check the 'STX'                                          
+        // Read one byte
+        if (cnt == 0) { return FALSE; }            
+        if ((*work->fp_rx)(dat, 1) != 1) { return FALSE; }        
+
+        // HDR Pause
+        if ((work->rx_cnt < work->head_size) && (dat[0] != work->head[work->rx_cnt]))
         {
-            continue; 
-        }                                
+
+            work->rx_cnt = 0; work->pld_len = 0;
+
+            // ## Field
+            if (dat[0] != work->head[work->rx_cnt])
+            {
+                continue;
+            }
+        }
+
+        // Storage and Overload detect
+        if (work->rx_cnt < work->buff_len) { work->rx_buff[work->rx_cnt++] = dat[0]; }
+        else 
+        {        
+            work->rx_cnt = 0; work->pld_len = 0; continue;
+        }
+
+        // Payload len Pause
+        if (work->rx_cnt == (work->head_size + sizeof(u16))) {
         
-        if (cnt < T_BUS_BYTE_BUFFER_SIZE) { buf[cnt++] = dat; }         // Storage and Overload detect
-        else { cnt = 0; }
-
-
-        if (cnt == (TBUS_PAD_LEN_OFFSET + TBUS_PAD_LEN_SIZE))           // Get the Payload length
-        {
-            pld_len = *((u16 *)&buf[TBUS_PAD_LEN_OFFSET]);   
-        }      
-
+            work->pld_len = *(u16 *)(work->rx_buff + work->head_size);
+        }
         
         // Check if Geting a packet
-        if (cnt == (pld_len + T_BUS_HEADER_SIZE + T_BUS_END_SIEZ)) 
-        {
-            if (TBusDecPkg(buf, cnt, pkg) == TRUE) { cnt = 0; pld_len = 0; return TRUE; }
-            else { cnt = 0; pld_len = 0; return FALSE; }
+        if (work->rx_cnt >= (work->head_size + sizeof(TBusFixFieldT) + work->pld_len + 1)) 
+        {        
+            break;
         }
     }
+
+
+    //------------------------------------------------------------
+    //                      Pause TBus Packet
+    //------------------------------------------------------------
+
+    if (TBusArrayToPkt(work->head, work->rx_buff, work->rx_cnt, pkt) == TRUE) 
+    { 
+
+        work->rx_cnt = 0; work->pld_len = 0; 
+        return TRUE; 
+    }
+    else 
+    {
+
+        work->rx_cnt = 0; work->pld_len = 0;
+        return FALSE;
+    }
 }
+
+
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

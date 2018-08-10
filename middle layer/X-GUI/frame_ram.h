@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  frame_ram.h
 / Author:     JiangJun
-/ Data:       2018/2/11
-/ Version:    v1.0
+/ Data:       [2018-8-10]
+/ Version:    v1.3
 /-----------------------------------------------------------------------^^-
 / Mono Mode Frame RAM Driver
 /------------------------------------------------------------------------*/
@@ -15,22 +15,36 @@
 // DRIVER CONFIG
 //------------------------------------------------------------
 
-#define _FRAME_RAM_SIZE_X       192
-#define _FRAME_RAM_SIZE_Y       96
+#define _FRAME_RAM_SIZE_X       240
+#define _FRAME_RAM_SIZE_Y       160
 
 // Vertical Flip
 // 
-// (0, 0)
-// ----------------> x                               y
+// (0, 0)                               
+// ----------------> x                  y              
+// |                                    |             
+// |                                    |              
+// |                       ===>         |              
+// |                                    |               
+// |                                    |              
+// |                                    |               
+// y                             (0, 0) ---------------> x
+
+#define _FRAME_ENABLE_VERTICAL_FLIP     0
+
+// Horizontal Flip
+// 
+// (0, 0)                                       
+// ----------------> x              x <---------------(0, 0)
 // |                                                 |
 // |                                                 |
 // |                       ===>                      |
 // |                                                 |
 // |                                                 |
 // |                                                 |
-// y                                x <---------------(0, 0)
+// y                                                 y
 
-#define _FRAME_ENABLE_VERTICAL_FLIP     0
+#define _FRAME_ENABLE_HORIZONTAL_FLIP   1
 
 // LCD reverse
 #define _FRAME_ENABLE_REVERSE           0
@@ -87,8 +101,10 @@ extern void pLcdInit(fpInit fp_init, fpWriteFrame fp_write_fme, fpSetConstrast f
 extern void pLcdSetPixel(CoorT x, CoorT y, ColorT color);
 extern void pLcdGetPixel(CoorT x, CoorT y, ColorT *color);
 extern void pLcdWritePixels(CursorT *ulc, CursorT *lrc, ColorT *color);
+extern void pLcdWritePixelsEx(CursorT *ulc, CursorT *lrc, ColorT *color, gu8 rev);
 extern void pLcdFillPixels(CursorT *ulc, CursorT *lrc, ColorT color);
 extern void pLcdReadPixels(CursorT *ulc, CursorT *lrc, ColorT *color);
+extern void pLcdRevPixels(CursorT *ulc, CursorT *lrc, gu8 rev);
 extern void pLcdUpdate(void);
 
 #endif

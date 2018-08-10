@@ -2,10 +2,19 @@
 /*----------------------------------------------------------------------^^-
 / File name:  frame_ram.c
 / Author:     JiangJun
-/ Data:       2018/2/11
-/ Version:    v1.0
+/ Data:       [2018-8-10]
+/ Version:    v1.3
 /-----------------------------------------------------------------------^^-
 / Mono Mode Frame RAM Driver
+/ ---
+/ v1.1 [2018-6-8]
+/ 1. 增加增强型写字节流函数，带反显字符颜色
+/ ---
+/ v1.2 [2018-6-21]
+/ 1. 增加 pLcdRevPixels()，支持块反转颜色
+/ ---
+/ v1.3 [2018-8-10]
+/ 1. 增加 _FRAME_ENABLE_VERTICAL_FLIP / _FRAME_ENABLE_HORIZONTAL_FLIP功能
 /------------------------------------------------------------------------*/
 
 #include "frame_ram.h"
@@ -33,6 +42,83 @@ static fpWriteFrame FpWriteFrame; static fpSetConstrast FpSetConstrast;
 
 
 /*----------------------------------------------------------------------
+ *  _inline_lcd_set_pixel
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+inline void _inline_lcd_set_pixel(CoorT x, CoorT y, ColorT color)
+{
+
+#if ((_FRAME_ENABLE_VERTICAL_FLIP == 0) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 0))
+
+    // V: 0  H: 0
+    
+    FrameRam[y / 8][x] &= ~(0x01 << (y % 8));
+    FrameRam[y / 8][x] |= ((gu8)color << (y % 8));
+
+    
+#elif ((_FRAME_ENABLE_VERTICAL_FLIP == 1) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 0))
+
+    // V: 1  H: 0
+    
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][x] &= ~(0x01 << (7 - (y % 8)));
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][x] |= ((gu8)color << (7 - (y % 8)));
+    
+#elif ((_FRAME_ENABLE_VERTICAL_FLIP == 0) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 1))
+
+    // V: 0  H: 1
+    
+    FrameRam[y / 8][_FRAME_RAM_SIZE_X - x - 1] &= ~(0x01 << (y % 8));
+    FrameRam[y / 8][_FRAME_RAM_SIZE_X - x - 1] |= ((gu8)color << (y % 8));
+    
+#else
+
+    // V: 1  H: 1
+    
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][_FRAME_RAM_SIZE_X - x - 1] &= ~(0x01 << (7 - (y % 8)));
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][_FRAME_RAM_SIZE_X - x - 1] |= ((gu8)color << (7 - (y % 8)));
+    
+#endif
+}
+
+/*----------------------------------------------------------------------
+ *  _inline_lcd_rev_pixel
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+inline void _inline_lcd_rev_pixel(CoorT x, CoorT y)
+{    
+
+#if ((_FRAME_ENABLE_VERTICAL_FLIP == 0) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 0))
+
+    // V: 0  H: 0    
+    FrameRam[y / 8][x] ^= (0x01 << (y % 8));
+    
+#elif ((_FRAME_ENABLE_VERTICAL_FLIP == 1) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 0))
+
+    // V: 1  H: 0    
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][x] ^= (0x01 << (7 - (y % 8)));
+    
+#elif ((_FRAME_ENABLE_VERTICAL_FLIP == 0) && (_FRAME_ENABLE_HORIZONTAL_FLIP == 1))
+
+    // V: 0  H: 1    
+    FrameRam[y / 8][_FRAME_RAM_SIZE_X - x - 1] ^= (0x01 << (y % 8));
+    
+#else
+
+    // V: 1  H: 1    
+    FrameRam[(_FRAME_RAM_SIZE_Y / 8) - (y / 8) - 1][_FRAME_RAM_SIZE_X - x - 1] ^= (0x01 << (7 - (y % 8)));
+    
+#endif    
+}
+
+/*----------------------------------------------------------------------
  *  pLcdSetPixel
  *
  *  Purpose: None.
@@ -42,8 +128,8 @@ static fpWriteFrame FpWriteFrame; static fpSetConstrast FpSetConstrast;
  *---------------------------------------------------------------------*/
 void pLcdSetPixel(CoorT x, CoorT y, ColorT color)
 {
-    FrameRam[y / 8][x] &= ~(0x01 << (y % 8));
-    FrameRam[y / 8][x] |= ((gu8)color << (y % 8));
+    
+    _inline_lcd_set_pixel(x, y, color);
 }
 
 /*----------------------------------------------------------------------
@@ -97,12 +183,10 @@ void pLcdWritePixels(CursorT *ulc, CursorT *lrc, ColorT *color)
 
                 // write color.
                 if (mid_col == 0) {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_WHITE << (mid_y % 8));  
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
                 }
                 else {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_BLACK << (mid_y % 8)); 
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
                 }
             }
             if (cor_bit_point != 0) {
@@ -130,12 +214,10 @@ void pLcdWritePixels(CursorT *ulc, CursorT *lrc, ColorT *color)
 
                 // write color.
                 if (mid_col == 0) {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_WHITE << (mid_y % 8));  
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
                 }
                 else {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_BLACK << (mid_y % 8)); 
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
                 }
             }
 
@@ -164,12 +246,10 @@ void pLcdWritePixels(CursorT *ulc, CursorT *lrc, ColorT *color)
 
                 // write color.
                 if (mid_col == 0) {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_WHITE << (mid_y % 8));  
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
                 }
                 else {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_BLACK << (mid_y % 8)); 
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
                 }
             }
 
@@ -198,12 +278,163 @@ void pLcdWritePixels(CursorT *ulc, CursorT *lrc, ColorT *color)
 
                 // write color.
                 if (mid_col == 0) {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_WHITE << (mid_y % 8));  
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
                 }
                 else {
-                    FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                    FrameRam[mid_y / 8][mid_x] |= ((gu8)_COLOR_BLACK << (mid_y % 8)); 
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
+                }
+            }
+
+            if (cor_bit_point != 0) {
+                color++;
+            }
+        }
+    }
+    else
+    {}  
+}
+
+/*----------------------------------------------------------------------
+ *  pLcdWritePixelsEx
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *
+ *  NOTE:    !! Function use system forground as the color.
+ *              color is a byte type, (8-bit --- 8 pixels)
+ *              0: background, 1: forground.
+ *---------------------------------------------------------------------*/
+void pLcdWritePixelsEx(CursorT *ulc, CursorT *lrc, ColorT *color, gu8 rev)
+{
+    CoorSignT mid_x, mid_y;
+    ColorT mid_col;
+    gu8 cor_bit_point;
+    
+    // Write block data.
+    if ((lrc->x >= ulc->x) && (lrc->y >= ulc->y))
+    {
+        for (mid_y = ulc->y; mid_y <= lrc->y; mid_y++)
+        {
+            cor_bit_point = 0;
+            
+            for (mid_x = ulc->x; mid_x <= lrc->x; mid_x++)
+            {
+                // Get color.
+                mid_col = (*color) & (0x01 << cor_bit_point);
+                // color byte jump.
+                cor_bit_point++;
+                if (cor_bit_point == 8) 
+                {
+                    cor_bit_point = 0;
+                    color++;
+                }
+
+                // write color.
+                if (((mid_col == 0) && (rev == 0)) || ((mid_col != 0) && (rev == 1))) 
+                {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
+                }
+                else {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
+                }
+            }
+            if (cor_bit_point != 0) {
+                color++;
+            }
+        }
+    }
+    else if ((lrc->x <= ulc->x) && (lrc->y >= ulc->y))
+    {
+        for (mid_x = ulc->x; mid_x >= lrc->x; mid_x--)
+        {
+            cor_bit_point = 0;
+            
+            for (mid_y = ulc->y; mid_y <= lrc->y; mid_y++)
+            {
+                // Get color.
+                mid_col = (*color) & (0x01 << cor_bit_point);
+                // color byte jump.
+                cor_bit_point++;
+                if (cor_bit_point == 8) 
+                {
+                    cor_bit_point = 0;
+                    color++;
+                }
+
+                // write color.
+                if (((mid_col == 0) && (rev == 0)) || ((mid_col != 0) && (rev == 1))) 
+                {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE); 
+                }
+                else {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK); 
+                }
+            }
+
+            if (cor_bit_point != 0) {
+                color++;
+            }
+        }
+    }
+    else if ((lrc->x <= ulc->x) && (lrc->y <= ulc->y))
+    {
+        for (mid_y = ulc->y; mid_y >= lrc->y; mid_y--)
+        {
+            cor_bit_point = 0;
+            
+            for (mid_x = ulc->x; mid_x >= lrc->x; mid_x--)
+            {
+                // Get color.
+                mid_col = (*color) & (0x01 << cor_bit_point);
+                // color byte jump.
+                cor_bit_point++;
+                if (cor_bit_point == 8) 
+                {
+                    cor_bit_point = 0;
+                    color++;
+                }
+
+                // write color.
+                if (((mid_col == 0) && (rev == 0)) || ((mid_col != 0) && (rev == 1))) 
+                {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
+                }
+                else {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
+                }
+            }
+
+            if (cor_bit_point != 0) {
+                color++;
+            }
+        }
+    }
+    else if ((lrc->x >= ulc->x) && (lrc->y <= ulc->y))
+    {
+        for (mid_x = ulc->x; mid_x <= lrc->x; mid_x++)
+        {
+            cor_bit_point = 0;
+            
+            for (mid_y = ulc->y; mid_y >= lrc->y; mid_y--)
+            {
+                // Get color.
+                mid_col = (*color) & (0x01 << cor_bit_point);
+                // color byte jump.
+                cor_bit_point++;
+                if (cor_bit_point == 8) 
+                {
+                    cor_bit_point = 0;
+                    color++;
+                }
+
+                // write color.
+                if (((mid_col == 0) && (rev == 0)) || ((mid_col != 0) && (rev == 1))) 
+                {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_WHITE);
+                }
+                else {
+                    _inline_lcd_set_pixel(mid_x, mid_y, _COLOR_BLACK);
                 }
             }
 
@@ -235,8 +466,7 @@ void pLcdFillPixels(CursorT *ulc, CursorT *lrc, ColorT color)
         {   
             for (mid_x = ulc->x; mid_x <= lrc->x; mid_x++)
             {                
-                FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                FrameRam[mid_y / 8][mid_x] |= ((gu8)color << (mid_y % 8));               
+                _inline_lcd_set_pixel(mid_x, mid_y, color);        
             }
         }
     }
@@ -246,8 +476,7 @@ void pLcdFillPixels(CursorT *ulc, CursorT *lrc, ColorT color)
         {
             for (mid_y = ulc->y; mid_y <= lrc->y; mid_y++)
             {
-                FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                FrameRam[mid_y / 8][mid_x] |= ((gu8)color << (mid_y % 8));    
+                _inline_lcd_set_pixel(mid_x, mid_y, color);    
             }
         }
     }
@@ -257,8 +486,7 @@ void pLcdFillPixels(CursorT *ulc, CursorT *lrc, ColorT color)
         {
             for (mid_x = ulc->x; mid_x >= lrc->x; mid_x--)
             {
-                FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                FrameRam[mid_y / 8][mid_x] |= ((gu8)color << (mid_y % 8));  
+                _inline_lcd_set_pixel(mid_x, mid_y, color);     
             }
         }
     }
@@ -268,13 +496,75 @@ void pLcdFillPixels(CursorT *ulc, CursorT *lrc, ColorT color)
         {   
             for (mid_y = ulc->y; mid_y >= lrc->y; mid_y--)
             {
-                FrameRam[mid_y / 8][mid_x] &= ~(0x01 << (mid_y % 8));
-                FrameRam[mid_y / 8][mid_x] |= ((gu8)color << (mid_y % 8));    
+                _inline_lcd_set_pixel(mid_x, mid_y, color);      
             }
         }
     }
     else
     {}    
+}
+
+/*----------------------------------------------------------------------
+ *  pLcdRevPixels
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void pLcdRevPixels(CursorT *ulc, CursorT *lrc, gu8 rev)
+{
+    CoorSignT mid_x, mid_y;
+
+    // Check Rev
+    if (rev == 0) 
+    { 
+        return; 
+    }
+    
+    // Write block data.
+    if ((lrc->x >= ulc->x) && (lrc->y >= ulc->y))
+    {
+        for (mid_y = ulc->y; mid_y <= lrc->y; mid_y++)
+        {                        
+            for (mid_x = ulc->x; mid_x <= lrc->x; mid_x++)
+            {                
+                _inline_lcd_rev_pixel(mid_x, mid_y);
+            }            
+        }
+    }
+    else if ((lrc->x <= ulc->x) && (lrc->y >= ulc->y))
+    {
+        for (mid_x = ulc->x; mid_x >= lrc->x; mid_x--)
+        {            
+            for (mid_y = ulc->y; mid_y <= lrc->y; mid_y++)
+            {
+                _inline_lcd_rev_pixel(mid_x, mid_y);
+            }
+        }
+    }
+    else if ((lrc->x <= ulc->x) && (lrc->y <= ulc->y))
+    {
+        for (mid_y = ulc->y; mid_y >= lrc->y; mid_y--)
+        {           
+            for (mid_x = ulc->x; mid_x >= lrc->x; mid_x--)
+            {
+                _inline_lcd_rev_pixel(mid_x, mid_y);
+            }
+        }
+    }
+    else if ((lrc->x >= ulc->x) && (lrc->y <= ulc->y))
+    {
+        for (mid_x = ulc->x; mid_x <= lrc->x; mid_x++)
+        {           
+            for (mid_y = ulc->y; mid_y >= lrc->y; mid_y--)
+            {
+                _inline_lcd_rev_pixel(mid_x, mid_y);
+            }
+        }
+    }
+    else
+    {}  
 }
 
 /*----------------------------------------------------------------------

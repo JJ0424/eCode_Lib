@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  frame_ram.c
 / Author:     JiangJun
-/ Data:       [2018-8-10]
-/ Version:    v1.3
+/ Data:       [2018-8-14]
+/ Version:    v1.4
 /-----------------------------------------------------------------------^^-
 / Mono Mode Frame RAM Driver
 / ---
@@ -15,6 +15,11 @@
 / ---
 / v1.3 [2018-8-10]
 / 1. 增加 _FRAME_ENABLE_VERTICAL_FLIP / _FRAME_ENABLE_HORIZONTAL_FLIP功能
+/ ---
+/ v1.4 [2018-8-14]
+/ 1. 测试速度：240x160满屏写
+/               pLcdWritePixelsEx   - 44ms
+/               pLcdFillPixels      - 27ms
 /------------------------------------------------------------------------*/
 
 #include "frame_ram.h"

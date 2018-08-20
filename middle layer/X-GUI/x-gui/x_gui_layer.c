@@ -84,6 +84,27 @@ void LayerRender(xCursorT *ulc, xCursorT *lrc, gu8 col, gu8 rev)
 }
 
 /*----------------------------------------------------------------------
+ *  LayerRenderScreen
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void LayerRenderScreen(gu8 col, gu8 rev)
+{
+
+    xCursorT ulc, lrc;
+    ulc.x = 0; ulc.y = 0; lrc.x = _LCD_X_SIZE - 1; lrc.y = _LCD_Y_SIZE - 1;
+    
+    // Fill Gray
+    pLcdFillGray(&ulc, &lrc, col);
+
+    // Rev
+    if (rev) { pLcdRevPixels(&ulc, &lrc, rev); }
+}
+
+/*----------------------------------------------------------------------
  *  LayerClrScreen
  *
  *  Purpose: None.
@@ -114,6 +135,40 @@ void LayerRevScreen(gu8 rev)
     xCursorT ulc, lrc;
 
     ulc.x = 0; ulc.y = 0; lrc.x = _LCD_X_SIZE - 1; lrc.y = _LCD_Y_SIZE - 1;
+    if (rev) { pLcdRevPixels(&ulc, &lrc, rev); }    
+}
+
+/*----------------------------------------------------------------------
+ *  LayerClr
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void LayerClr(gu16 xs, gu16 ys, gu16 xe, gu16 ye, gu8 col)
+{
+
+    xCursorT ulc, lrc;
+
+    ulc.x = xs; ulc.y = ys; lrc.x = xe; lrc.y = ye;
+    pLcdFillPixels(&ulc, &lrc, col);
+}
+
+/*----------------------------------------------------------------------
+ *  LayerRev
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void LayerRev(gu16 xs, gu16 ys, gu16 xe, gu16 ye, gu8 rev)
+{
+
+    xCursorT ulc, lrc;
+
+    ulc.x = xs; ulc.y = ys; lrc.x = xe; lrc.y = ye;
     if (rev) { pLcdRevPixels(&ulc, &lrc, rev); }    
 }
 

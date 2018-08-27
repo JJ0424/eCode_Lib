@@ -1,6 +1,5 @@
 
-
-// v1.1 [2018-07-21]
+// v1.3 [2018-8-27]
 
 #include "strlib.h"
 
@@ -117,4 +116,99 @@ u16 _strtrim(u8 *str, const u8 *trim)
     }
 
     return cnt;
+}
+
+//------------------------------------------------------------
+// memory copy
+//------------------------------------------------------------
+void _memcpy(u8 *dst, u8 *src, u16 size)
+{
+    u16 idx = 0; u8 *dst_tmp = dst, *src_tmp = src;
+
+    for (idx = 0; idx < size; idx++)
+    {
+        *dst_tmp = *src_tmp;
+        dst_tmp++; src_tmp++;
+    }
+}
+
+//------------------------------------------------------------
+// Compare 2 strings, 指定长度
+//------------------------------------------------------------
+_bool _strcmp_2(u8 *str1, u8 *str2, u8 len)
+{
+    u16 idx = 0;
+    
+    for (idx = 0; idx < len; idx++)
+    {
+        if (str1[idx] != str2[idx]) { break; }
+    }
+    
+    if (idx == len) { return TRUE; }
+    
+    return FALSE;    
+}
+
+//------------------------------------------------------------
+// 获取指定分割符后面的字符串
+// ch:          字符
+// seg:         指示第几个字符，从1开始...
+// in_str:      输入字符串
+// out_str:     输出缓冲
+// out_len:     输出缓冲长度
+//------------------------------------------------------------
+_bool _strpause(u8 ch, u16 seg, u8 *in_str, u16 in_len, u8 *out_str, u16 out_len)
+{
+    u16 idx = 0, st_idx = 0, end_idx = 0; u16 seg_cnt = 0;
+
+    // Find Index Start
+    for (idx = 0; (in_str[idx] != '\0') && (idx < in_len); idx++)
+	{
+	    // Find char
+		if (in_str[idx] == ch) { seg_cnt++; }
+			
+		// Find Start
+		if (seg_cnt == seg)			
+		{
+			st_idx = ++idx; break;
+		}		
+	}
+
+    // Find Index End
+    for (; (in_str[idx] != '\0') && (idx < in_len); idx++)
+	{
+	    // Find char
+		if (in_str[idx] == ch) { seg_cnt++; }
+			
+		// Find End
+	    if (seg_cnt == (seg + 1))
+		{
+            end_idx = idx - 1; break;
+		}
+	}
+    
+	// Check Vaild
+	if ((end_idx >= st_idx) && ((end_idx - st_idx + 1) < out_len) && (seg_cnt > 0))
+	{
+	    // byte count
+	    seg_cnt = end_idx - st_idx + 1;
+	    
+        // Copy to Memory
+        for (idx = 0; idx < seg_cnt; idx++)
+        {
+            out_str[idx] = in_str[st_idx + idx];
+        }
+
+        // Ending Char
+        out_str[idx] = '\0';
+
+        // True
+        return TRUE;
+	}
+	else
+	{
+        out_str[0] = '\0';
+	}
+		    
+    return FALSE;    
 }

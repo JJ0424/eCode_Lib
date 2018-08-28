@@ -102,6 +102,9 @@ typedef struct {
 extern void BeeperMpInit(u16 proc_time);
 extern void BeeperMpTimeProc(void);
 extern void BeeperMpSetScore(_MusicNotesT *p_note, u16 note_cnt, u8 voice_gain);
+extern void BeeperMpPlay(_MusicalToneT tone, u8 voice_gain);
 
 #endif
-
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

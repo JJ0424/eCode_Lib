@@ -2,10 +2,14 @@
 /*----------------------------------------------------------------------^^-
 / File name:  frame_ram_4g.h
 / Author:     JiangJun
-/ Data:       [2018-8-15]
-/ Version:    v1.0
+/ Data:       [2018-10-30]
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 / Gray Mode Frame RAM Driver
+/ ---
+/ v1.1 [2018-10-30]
+/ 1. FIX: pLcdWritePixels and pLcdWritePixelsEx
+/         p_col_tmp += (y_e_align + 1 - ulc->y) * (((lrc->x - ulc->x + 1) / 8) + 1);
 /------------------------------------------------------------------------*/
 
 #include "frame_ram_4g.h"
@@ -462,7 +466,7 @@ void pLcdWritePixels(xCursorT *ulc, xCursorT *lrc, gu8 *p_col)
         }
 
         // Mask Jump
-        p_col_tmp += (y_e_align + 1 - ulc->y) * (((lrc->x - ulc->x + 1) / 8) + 1);
+        p_col_tmp += (y_e_align + 1 - ulc->y) * (((lrc->x - ulc->x) / 8) + 1);
 
         // [ BOTTOM ]
         for (y = y_e_align + 1; y <= lrc->y; y++)
@@ -602,7 +606,7 @@ void pLcdWritePixelsEx(xCursorT *ulc, xCursorT *lrc, gu8 *p_col, gu8 rev)
         }
 
         // Mask Jump
-        p_col_tmp += (y_e_align + 1 - ulc->y) * (((lrc->x - ulc->x + 1) / 8) + 1);
+        p_col_tmp += (y_e_align + 1 - ulc->y) * (((lrc->x - ulc->x) / 8) + 1);
 
         // [ BOTTOM ]
         for (y = y_e_align + 1; y <= lrc->y; y++)

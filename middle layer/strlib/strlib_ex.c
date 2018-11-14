@@ -2,13 +2,16 @@
 /*----------------------------------------------------------------------^^-
 / File name:  strlib_ex.c
 / Author:     JiangJun
-/ Data:       2018/10/31
-/ Version:    v1.1
+/ Data:       2018/11/05
+/ Version:    v1.2
 /-----------------------------------------------------------------------^^-
 / STRING LIB
 / ---
 / v1.1 [2018-10-31]
 / 1. add strlib.c
+/ ---
+/ v1.2 [2018-11-5]
+/ 1. add _ex
 /------------------------------------------------------------------------*/
 
 
@@ -234,14 +237,14 @@ u8 _vpause(u8 *src, u16 cnt, u8 *buff, u16 bfcnt, _V_PauseItemT *vitem, u8 icnt)
 }
 
 /*----------------------------------------------------------------------
- *  _strcpy
+ *  _strcpy_ex
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-void _strcpy(u8 *src, u8 *dst)
+void _strcpy_ex(u8 *src, u8 *dst)
 {
 
     /* no limit */
@@ -254,14 +257,14 @@ void _strcpy(u8 *src, u8 *dst)
 }
 
 /*----------------------------------------------------------------------
- *  _strcat
+ *  _strcat_ex
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-void _strcat(u8 *src, u8 *dst)
+void _strcat_ex(u8 *src, u8 *dst)
 {   
 
     /* to the end of the dst */
@@ -277,14 +280,14 @@ void _strcat(u8 *src, u8 *dst)
 }
 
 /*----------------------------------------------------------------------
- *  _strlen
+ *  _strlen_ex
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-u16 _strlen(u8 *src)
+u16 _strlen_ex(u8 *src)
 {
 
     u16 idx = 0;

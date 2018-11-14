@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  strlib_ex.h
 / Author:     JiangJun
-/ Data:       2018/10/31
-/ Version:    v1.1
+/ Data:       2018/11/05
+/ Version:    v1.2
 /-----------------------------------------------------------------------^^-
 / STRING LIB
 /------------------------------------------------------------------------*/
@@ -37,9 +37,9 @@ extern double _atod(u8 *src, u8 cnt);
 extern float _atof(u8 *src, u8 cnt);
 extern s32 _atoi(u8 *src, u8 cnt);
 extern u8 _vpause(u8 *src, u16 cnt, u8 *buff, u16 bfcnt, _V_PauseItemT *vitem, u8 icnt);
-extern void _strcpy(u8 *src, u8 *dst);
-extern void _strcat(u8 *src, u8 *dst);
-extern u16 _strlen(u8 *src);
+extern void _strcpy_ex(u8 *src, u8 *dst);
+extern void _strcat_ex(u8 *src, u8 *dst);
+extern u16 _strlen_ex(u8 *src);
 extern void _icvt(s32 val, u8 *out, u8 out_size);
 
 #endif

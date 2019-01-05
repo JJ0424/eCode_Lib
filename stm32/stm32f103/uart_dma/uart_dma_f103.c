@@ -2,10 +2,13 @@
 /*----------------------------------------------------------------------^^-
 / File name:  uart_dma_f103.c
 / Author:     JiangJun
-/ Data:       2018-8-2
-/ Version:    v1.1
+/ Data:       2019-1-3
+/ Version:    v1.2
 /-----------------------------------------------------------------------^^-
 / STM32F103 UART DMA Driver
+/ ---
+/ v1.2 [2019-1-3]
+/ 1. add 19200 baudrate support
 /------------------------------------------------------------------------*/
 
 #include "uart_dma_f103.h"
@@ -180,6 +183,16 @@ void UartInit(UartRunT *uart_dma)
 
         // 5 ms
         uart_dma->overtime.max_time = ( 5 / _UART_DMA_RX_TIMEPROC ); 
+    }
+    else if (uart_dma->baud_rate == 19200) {
+
+        // 3 ms
+        uart_dma->overtime.max_time = ( 3 / _UART_DMA_RX_TIMEPROC ); 
+    }
+    else {
+
+        // default: 5 ms
+        uart_dma->overtime.max_time = ( 5 / _UART_DMA_RX_TIMEPROC );
     }
 }
 

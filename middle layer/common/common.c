@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  common.c
 / Author:     JiangJun
-/ Data:       2018-6-28
-/ Version:    v1.5
+/ Data:       [2019-3-26]
+/ Version:    v1.6
 /-----------------------------------------------------------------------^^-
 / Common Functions
 / ---
@@ -21,6 +21,10 @@
 / ---
 / v1.5 [2018-6-28]
 / [1] Add fcvt_format_bit()/ dcvt_format_bit()
+/ ---
+/ v1.6 [2019-3-26]
+/ [1] Add dcvt_format_bit()
+/ [2] Add "%2.3s" can output nevigate float point
 /------------------------------------------------------------------------*/
 
 #include "main.h"
@@ -125,6 +129,7 @@ void uicvt_format_bit(u32 val, u8 bit_width, u8 *out, u16 out_size)
  *                      "%5.0f" -   00000.
  *                      "%0.6f" -   .000000
  *                      "%0.0f" -   .
+ *                      "%3.2s" -   -000.00
  *---------------------------------------------------------------------*/
 u8 fcvt_format_bit(float val, const u8 *format, u8 *out, u16 out_size)
 {
@@ -137,6 +142,9 @@ u8 fcvt_format_bit(float val, const u8 *format, u8 *out, u16 out_size)
     {
         val_tmp = -val_tmp;
         sign = 1;
+        if (format[4] == 's') {
+            if (out_size) { *out = '-'; out++; out_size--; }
+        }
     } 
     else { sign = 0; }
     
@@ -160,3 +168,61 @@ u8 fcvt_format_bit(float val, const u8 *format, u8 *out, u16 out_size)
     // Return Sign
     return sign;
 }
+
+/*----------------------------------------------------------------------
+ *  dcvt_format_bit
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *
+ *  Exit:    The Sign of the value
+ *
+ *  NOTE:    format:
+ *                      "%2.3f" -   00.000
+ *                      "%5.0f" -   00000.
+ *                      "%0.6f" -   .000000
+ *                      "%0.0f" -   .
+ *                      "%3.9f" -   000.123456789
+ *                      "%3.2s" -   -000.00
+ *---------------------------------------------------------------------*/
+u8 dcvt_format_bit(double val, const u8 *format, u8 *out, u16 out_size)
+{
+
+    u8 i_width = 0, p_width = 0, sign = 0; double val_tmp = val;
+    u8 idx = 0;
+
+    // Get Sign
+    if (val_tmp < 0)
+    {
+        val_tmp = -val_tmp;
+        sign = 1;
+        if (format[4] == 's') {
+            if (out_size) { *out = '-'; out++; out_size--; }
+        }
+    } 
+    else { sign = 0; }
+    
+    // Get inter and point Width
+    if ((format[0] != '%') || (format[2] != '.')) { return sign; }
+    i_width = format[1] - 0x30; p_width = format[3] - 0x30;
+
+    // Check Range
+    if (out_size <= (i_width + p_width + 1)) { return sign; }
+    
+    // To String
+    uicvt_format_bit((u32)val_tmp, i_width, out, out_size); out[i_width] = '.';
+
+    val_tmp = val_tmp - (u32)val_tmp;
+    for (idx = 0; idx < p_width; idx++)
+    {
+        val_tmp *= 10.0;
+    }
+    uicvt_format_bit((u32)val_tmp, p_width, out + i_width + 1, out_size - i_width - 1);
+
+    // Return Sign
+    return sign;
+}
+
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

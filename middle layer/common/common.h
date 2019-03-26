@@ -3,8 +3,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  common.h
 / Author:     JiangJun
-/ Data:       2018-6-28
-/ Version:    v1.5
+/ Data:       [2019-3-26]
+/ Version:    v1.6
 /-----------------------------------------------------------------------^^-
 /  Common Functions
 /------------------------------------------------------------------------*/
@@ -17,5 +17,9 @@ extern u8 XorCheckSum(u8 *input, u32 length);
 extern void LoopDelay(u16 cnt);
 extern void uicvt_format_bit(u32 val, u8 bit_width, u8 *out, u16 out_size);
 extern u8 fcvt_format_bit(float val, const u8 *format, u8 *out, u16 out_size);
+extern u8 dcvt_format_bit(double val, const u8 *format, u8 *out, u16 out_size);
 
 #endif
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

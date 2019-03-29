@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xfft.c
 / Author:     JiangJun
-/ Data:       2017/10/26
-/ Version:    v1.0
+/ Data:       [2019-3-27]
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 /
 / Common FFT driver (Based on 'fix_fft' lib)
@@ -412,8 +412,8 @@ void xfft_cmplx_mag(XFFT_SrcT *fft, XFFT_CmplxMagT *cmplx_mag)
 void xfft_band_filter(XFFT_CmplxMagT *cmplx_mag, fft_u32 band_low, fft_u32 band_high, XFFT_BandFilterT *filter_out)
 {
 
-    fft_u16 st_idx = 0, end_idx = 0; fft_s16 mag_max = 0, mag_min = 0, tmp = 0;
-    fft_u16 list_size = cmplx_mag->fft_list_size;
+    fft_u16 st_idx = 0, end_idx = 0; fft_s16 mag_max = 0, mag_min = 0;
+    fft_u16 list_size = cmplx_mag->fft_list_size; fft_u32 freq_max = 0, freq_min = 0;
     
     // Copy user input 
     filter_out->band_low = band_low; filter_out->band_high = band_high;
@@ -447,20 +447,26 @@ void xfft_band_filter(XFFT_CmplxMagT *cmplx_mag, fft_u32 band_low, fft_u32 band_
 
     // Find Max and Min
     mag_min = cmplx_mag->fft_cmpx_pwr[st_idx]; mag_max = mag_min;
+    freq_min = cmplx_mag->fft_freq_table[st_idx]; freq_max = freq_min;
     
     for (st_idx++; st_idx <= end_idx; st_idx++)
-    {
-    
-        tmp = cmplx_mag->fft_cmpx_pwr[st_idx];
+    {            
         
         // Max
-        if (tmp > mag_max) { mag_max = tmp; }
+        if (cmplx_mag->fft_cmpx_pwr[st_idx] > mag_max) { 
+            mag_max = cmplx_mag->fft_cmpx_pwr[st_idx]; freq_max = cmplx_mag->fft_freq_table[st_idx];            
+        }
 
         // Min
-        if (mag_min > tmp) { mag_min = tmp; }
+        if (mag_min > cmplx_mag->fft_cmpx_pwr[st_idx]) { 
+            mag_min = cmplx_mag->fft_cmpx_pwr[st_idx]; freq_min = cmplx_mag->fft_freq_table[st_idx];
+        }
     }
 
     filter_out->cmpx_pwr_max = mag_max; filter_out->cmpx_pwr_min = mag_min;
+    filter_out->cmpx_freq_max = freq_max; filter_out->cmpx_freq_min = freq_min;
 }
 
-
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

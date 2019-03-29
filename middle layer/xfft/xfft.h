@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xfft.h
 / Author:     JiangJun
-/ Data:       2017/10/26
-/ Version:    v1.0
+/ Data:       [2019-3-27]
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 / Common FFT driver (Based on 'fix_fft' lib)
 /------------------------------------------------------------------------*/
@@ -33,7 +33,7 @@
 #define _XFFT_NUM_FFT           _XFFT_NUM_128   
 
 // Sample Rate
-#define _XFFT_SAMPLE_RATE       51200       // 51200Hz
+#define _XFFT_SAMPLE_RATE       50000       // 50KHz
 
 
 //------------------------------------------------------------
@@ -90,7 +90,10 @@ typedef struct {
     fft_u32 band_high;          // user Input Band High Frequency    
 
     // the max/min Power of the specified Band Filter
-    fft_s16 cmpx_pwr_max, cmpx_pwr_min;   
+    fft_s16 cmpx_pwr_max, cmpx_pwr_min;
+
+    // the max/min Frequency of the specified Band Filter
+    fft_u32 cmpx_freq_max, cmpx_freq_min;
     
 } XFFT_BandFilterT;
 
@@ -100,8 +103,6 @@ extern void xfft_cmplx_mag(XFFT_SrcT *fft, XFFT_CmplxMagT *cmplx_mag);
 extern void xfft_band_filter(XFFT_CmplxMagT *cmplx_mag, fft_u32 band_low, fft_u32 band_high, XFFT_BandFilterT *filter_out);
 
 #endif
-
-
-//--------------------------------------------------
-//---------------- End of file ---------------------
-//--------------------------------------------------
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

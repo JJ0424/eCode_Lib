@@ -2,12 +2,15 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.c
 / Author:     JiangJun
-/ Data:       2019/8/14
-/ Version:    v1.0
+/ Data:       [2019-10-23]
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 / ---
 / 1. can only support one I2S driver
+/ ---
+/ v1.1 [2019-10-23]
+/ 1. FIX: _i2s_refclk_set When _I2S_ENABLE_REFCLK_OUT = 0
 /------------------------------------------------------------------------*/
 
 
@@ -271,7 +274,7 @@ static _bool _i2s_refclk_set(_REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refc
     refcon_flag = OSC_REFOCON_OE | OSC_REFOCON_ON;      // MCLK output
 #else
 
-    refcon_flag = OSC_REFOCON_OE
+    refcon_flag = OSC_REFOCON_ON;
 #endif    
     
     // source select

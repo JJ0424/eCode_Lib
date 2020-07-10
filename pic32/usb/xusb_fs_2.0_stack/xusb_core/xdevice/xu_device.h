@@ -248,6 +248,9 @@ typedef enum {
     _XUD_FRES_ER_CLS_DAT_TX_MUCH_E05,   // the tx data size > 64 bytes
     _XUD_FRES_ER_SET_LOGIC_ER_E06,      // error with "set-operation"
 
+    // Other EP Error
+    _XUD_FRES_ER_DATA_NOT_READY_E11,    // data not ready with that ep
+
 } XUD_FResT;
 
 

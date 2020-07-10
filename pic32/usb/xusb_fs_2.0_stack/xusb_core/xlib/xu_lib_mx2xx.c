@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_lib_mx2xx.c
 / Author:     JiangJun
-/ Data:       [2020-7-6]
-/ Version:    v1.22
+/ Data:       [2020-7-10]
+/ Version:    v1.23
 /-----------------------------------------------------------------------^^-
 / PIC32 usb driver layer
 / ---
@@ -21,6 +21,9 @@
 / v1.22
 / 1. XUL_EPnInit() will clear BDT
 / 2. add XUL_EPnRxDATA() function
+/ ---
+/ v1.23
+/ 1. some functions e0 % 2 to if (eo) eo = 1; else eo = 0;
 /------------------------------------------------------------------------*/
 
 
@@ -335,14 +338,15 @@ _XUL_ResT XUL_EPnRstTx(u8 epn)
 _XUL_ResT XUL_EPnReadyRx(XUL_RxReadyT *rx_rdy, u8 *svalue)
 {
 
-    u8 eo = rx_rdy->even_odd % 2, sepn = 0;;
+    u8 eo = 0, sepn = 0;
     u8 epn = rx_rdy->epn;
     
     
     //------------------------------------------------------------
     //              Check EP number
     //------------------------------------------------------------
-    
+
+    if (rx_rdy->even_odd) eo = 1; else eo = 0;
     if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;
 
 
@@ -387,14 +391,15 @@ _XUL_ResT XUL_EPnReadyRx(XUL_RxReadyT *rx_rdy, u8 *svalue)
 _XUL_ResT XUL_EPnReadyTx(XUL_TxReadyT *tx_rdy, u8 *svalue)
 {
 
-    u8 eo = tx_rdy->even_odd % 2, sepn = 0;;
+    u8 eo = 0, sepn = 0;
     u8 epn = tx_rdy->epn;
     
 
     //------------------------------------------------------------
     //              Check EP number
     //------------------------------------------------------------
-    
+
+    if (tx_rdy->even_odd) eo = 1; else eo = 0;
     if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;
 
 
@@ -442,7 +447,7 @@ _XUL_ResT XUL_EPnTxDATA0(u8 epn, u8 eo, void *src, u16 size)
     u8 sepn = 0;
 
     /* check ep number */
-    eo = eo % 2;
+    if (eo) eo = 1; else eo = 0;
     if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;
 
     /* cacl set value */    
@@ -476,7 +481,7 @@ _XUL_ResT XUL_EPnTxDATA1(u8 epn, u8 eo, void *src, u16 size)
     u8 sepn = 0;
 
     /* check ep number */
-    eo = eo % 2;
+    if (eo) eo = 1; else eo = 0;
     if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;
 
     /* cacl set value */
@@ -511,7 +516,7 @@ _XUL_ResT XUL_EPnRxDATA(u8 epn, u8 eo, void *dst, u16 size)
     u8 sepn = 0;
 
     /* check ep number */
-    eo = eo % 2;
+    if (eo) eo = 1; else eo = 0;
     if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;
 
     /* cacl set value */

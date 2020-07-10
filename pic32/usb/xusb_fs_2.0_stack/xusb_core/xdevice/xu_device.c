@@ -35,6 +35,7 @@
 / ---
 / v1.21
 / 1. _xud_memset to public
+/ 2. add _XUD_FRES_ER_DATA_NOT_READY_E11 macro code
 /------------------------------------------------------------------------*/
 
 

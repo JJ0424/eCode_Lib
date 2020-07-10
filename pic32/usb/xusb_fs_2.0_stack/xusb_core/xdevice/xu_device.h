@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.h
 / Author:     JiangJun
-/ Data:       [2020-7-8]
-/ Version:    v1.20
+/ Data:       [2020-7-10]
+/ Version:    v1.21
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 /------------------------------------------------------------------------*/
@@ -338,6 +338,9 @@ extern XUD_FResT XUD_SyncFrame(XUD_RunStatusT *, XUD_DevRequestT *, u8 *, u8 *);
 // EXTERN
 extern void XUD_Init(fpXUD_TaskReport);
 extern void XUD_DispatchTasks(void);
+
+// EXTERN PUBLIC
+extern void _xud_memset(void *, u8, u8);
 
 #endif
 

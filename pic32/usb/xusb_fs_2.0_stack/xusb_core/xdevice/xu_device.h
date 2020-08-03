@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.h
 / Author:     JiangJun
-/ Data:       [2020-7-10]
-/ Version:    v1.21
+/ Data:       [2020-7-24]
+/ Version:    v1.22
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 /------------------------------------------------------------------------*/
@@ -269,13 +269,16 @@ typedef struct {
     XUD_StatusEnumT _dstatus;
 
     // usb device address
-    u8 _usb_addr;
+    u8 _usb_addr;                       // 1 - 127
+
+    // SOF frame number
+    u16 _sof_frame;                     // 11bit SOF frame number
 
     // point to descriptor group
     XUD_DescGroupT *_p_desc_set;        // device/ conf/ interface...
 
     // usb token now
-    XUL_TxRxEndT _epn_new_tk;           // the new token [ SETUP/ IN/ OUT ]
+    XUL_TxRxEndT _epn_new_tk;           // the new token [ SETUP/ IN/ OUT ]    
 
 
     //-------------------------------------------------------

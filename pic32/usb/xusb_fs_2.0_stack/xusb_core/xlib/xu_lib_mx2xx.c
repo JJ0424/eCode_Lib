@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_lib_mx2xx.c
 / Author:     JiangJun
-/ Data:       [2020-7-10]
-/ Version:    v1.23
+/ Data:       [2020-7-24]
+/ Version:    v1.24
 /-----------------------------------------------------------------------^^-
 / PIC32 usb driver layer
 / ---
@@ -24,6 +24,10 @@
 / ---
 / v1.23
 / 1. some functions e0 % 2 to if (eo) eo = 1; else eo = 0;
+/ ---
+/ v1.24
+/ 1. add sof frame-number get
+/ 2. SOF isr open
 /------------------------------------------------------------------------*/
 
 
@@ -97,7 +101,8 @@ _XUL_ResT XUL_Init(fpXUL_Isr fp_xuisr)
                                 USB_INT_DEVICE_RESET |              // RESET
                                 USB_INT_TOKEN_DONE |                // TOKEN
                                 USB_INT_IDLE_DETECT |               // IDLE
-                                USB_INT_STALL);                     // STALL
+                                USB_INT_STALL |                     // STALL
+                                USB_INT_SOF);                       // NEW SOF
 
     // Set Error Isr All Disable
     PLIB_USB_ErrorInterruptDisable(_XUL_HW_ID, USB_ERR_INT_ALL);
@@ -618,6 +623,21 @@ void XUL_SetAddress(u8 addr)
 
     /* device address */
     PLIB_USB_DeviceAddressSet(_XUL_HW_ID, addr);
+}
+
+/*----------------------------------------------------------------------
+ *  XUL_GetFrameNum
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+u16 XUL_GetFrameNum(void)
+{
+
+    /* FRMH/ L */
+    return PLIB_USB_FrameNumberGet(_XUL_HW_ID);
 }
 
 /*----------------------------------------------------------------------

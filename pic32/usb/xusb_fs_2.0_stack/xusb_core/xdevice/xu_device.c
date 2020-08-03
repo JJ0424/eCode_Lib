@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.c
 / Author:     JiangJun
-/ Data:       [2020-7-10]
-/ Version:    v1.21
+/ Data:       [2020-7-24]
+/ Version:    v1.22
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 / ---
@@ -36,6 +36,9 @@
 / v1.21
 / 1. _xud_memset to public
 / 2. add _XUD_FRES_ER_DATA_NOT_READY_E11 macro code
+/ ---
+/ v1.22
+/ 1. add sof number support
 /------------------------------------------------------------------------*/
 
 
@@ -152,7 +155,8 @@ void XUD_Init(fpXUD_TaskReport fp_tsk_rpt)
     //              Init Var
     //------------------------------------------------------------
     
-    XUD_RunStatus._usb_addr = 0;      
+    XUD_RunStatus._usb_addr = 0;
+    XUD_RunStatus._sof_frame = 0;
     XUD_RunStatus._ep0_sreq_now = _XUD_STDR_NONE;
     XUD_RunStatus._ep0_host_need = 0;
     XUD_RunStatus._ep0_total_cnt = 0;
@@ -287,7 +291,20 @@ void XUD_DispatchTasks(void)
 
 
     //------------------------------------------------------------
-    //              PRIORITY 4: IDLE
+    //              PRIORITY 4: SOF Frame
+    //------------------------------------------------------------
+    
+    if (isrsta & _XUL_INT_SOF)
+    {
+
+        // mark
+        isrclr |= _XUL_INT_SOF; XUD_RunStatus._sof_frame = XUL_GetFrameNum();
+        XUC_SOF_Request(XUD_RunStatus._sof_frame);
+    }
+
+
+    //------------------------------------------------------------
+    //              PRIORITY 5: IDLE
     //------------------------------------------------------------
     
     if (isrsta & _XUL_INT_IDLE_DETECT) isrclr |= _XUL_INT_IDLE_DETECT;                  // mark
@@ -380,6 +397,7 @@ XUD_FResT XUD_PoweredStatus(XUD_RunStatusT *xrstatus, XUL_TxRxEndT *ptrcp, XUL_T
     //------------------------------------------------------------
 
     XUD_RunStatus._usb_addr = 0;
+    XUD_RunStatus._sof_frame = 0;
     XUD_RunStatus._ep0_sreq_now = _XUD_STDR_NONE;
     XUD_RunStatus._ep0_host_need = 0;
     XUD_RunStatus._ep0_total_cnt = 0;

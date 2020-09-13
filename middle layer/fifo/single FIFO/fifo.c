@@ -2,10 +2,13 @@
 /*----------------------------------------------------------------------^^-
 / File name:  fifo.c
 / Author:     JiangJun
-/ Data:       2018/8/2
-/ Version:    v0.1
+/ Data:       [2020-9-13]
+/ Version:    v0.2
 /-----------------------------------------------------------------------^^-
 / FIFO Driver
+/ ---
+/ v0.2 [2020-9-13]
+/ 1. add reset function
 /------------------------------------------------------------------------*/
 
 #include "fifo.h"
@@ -18,19 +21,19 @@
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-void FiFoSpxInit(FiFoSpxT *dpx, _u8_t *buff, _idx_u16_t buff_len)
+void FiFoSpxInit(FiFoSpxT *spx, _u8_t *buff, _idx_u16_t buff_len)
 {
 
     // Init
-    dpx->_w_idx = 0; dpx->_r_idx = 0;
-    dpx->_cnt = 0; dpx->_total_cnt = 0; dpx->_full = 0;
+    spx->_w_idx = 0; spx->_r_idx = 0;
+    spx->_cnt = 0; spx->_total_cnt = 0; spx->_full = 0;
     if (buff != 0) {
 
-        dpx->buff = buff; dpx->buff_len = buff_len;
+        spx->buff = buff; spx->buff_len = buff_len;
     }
     else {
 
-        dpx->buff = 0; dpx->buff_len = 0;
+        spx->buff = 0; spx->buff_len = 0;
     }    
 }
 
@@ -151,6 +154,21 @@ _u8_t FiFoSpxIsFull(FiFoSpxT *spx)
 
     if (spx->_full) { return 0xFF; }
     return 0x00;
+}
+
+/*----------------------------------------------------------------------
+ *  FiFoSpxReset
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void FiFoSpxReset(FiFoSpxT *spx)
+{
+
+    spx->_w_idx = 0; spx->_r_idx = 0;
+    spx->_cnt = 0; spx->_total_cnt = 0; spx->_full = 0;
 }
 
 //---------------------------------------------------------------------------//

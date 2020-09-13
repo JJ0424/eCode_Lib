@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  fifo.c
 / Author:     JiangJun
-/ Data:       2018/8/2
-/ Version:    v0.1
+/ Data:       [2020-9-13]
+/ Version:    v0.2
 /-----------------------------------------------------------------------^^-
 / FIFO Driver
 /------------------------------------------------------------------------*/
@@ -46,11 +46,15 @@ typedef struct {
     
 } FiFoDpxT;
 
-extern void FiFoSpxInit(FiFoSpxT *dpx, _u8_t *buff, _idx_u16_t buff_len);
+extern void FiFoSpxInit(FiFoSpxT *spx, _u8_t *buff, _idx_u16_t buff_len);
 extern void FiFoSpxWrite(FiFoSpxT *spx, _u8_t *dat, _idx_u16_t cnt);
 extern _idx_u16_t FiFoSpxReadBytes(FiFoSpxT *spx, _u8_t *dat, _idx_u16_t cnt);
 extern _idx_u16_t FiFoSpxGetCount(FiFoSpxT *spx);
 extern _u8_t FiFoSpxIsEmpty(FiFoSpxT *spx);
 extern _u8_t FiFoSpxIsFull(FiFoSpxT *spx);
+extern void FiFoSpxReset(FiFoSpxT *spx);
 
 #endif
+//---------------------------------------------------------------------------//
+//----------------------------- END OF FILE ---------------------------------//
+//---------------------------------------------------------------------------//

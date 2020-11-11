@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.h
 / Author:     JiangJun
-/ Data:       [2019-10-23]
-/ Version:    v1.1
+/ Data:       [2020-11-11]
+/ Version:    v1.32
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 /------------------------------------------------------------------------*/
@@ -13,18 +13,19 @@
 
 
 #include "main.h"
+#include "hw_conf.h"
 
 
 //------------------------------------------------------------
 //              CONFIG
 //------------------------------------------------------------
 
-#define _I2S_DMA_BUFFER_SIZE                (10 * 1024)
+#define _I2S_DMA_BUFFER_SIZE                (1 * 1024)      // Unit: Byte
 #define _I2S_ENABLE_REFCLK_OUT              1
-#define _I2S_ENABLE_ISR_CALLBACK            0
+#define _I2S_ENABLE_ISR_CALLBACK            1
 
 // use PBCLK as REFCLKI
-#define _I2S_PLLCLK_PBCLK                   0       // SYSCLK as default
+#define _I2S_PLLCLK_PBCLK                   0               // SYSCLK as default
 
 
 //-------------------------------------------------------
@@ -130,7 +131,8 @@ typedef enum {
 typedef enum {
 
     _DMA_DIST_SIZE_16 = 2,          // 2 - tx 16-bits audio data to SPIxBUF
-    _DMA_DIST_SIZE_32 = 4,          // 4 - tx 24/ 32-bits audio data to SPIxBUF
+    _DMA_DIST_SIZE_24 = 3,          // 3 - tx 24-bits audio data to SPIxBUF
+    _DMA_DIST_SIZE_32 = 4,          // 4 - tx 32-bits audio data to SPIxBUF
     
 } _DMA_DistSizeT;
 
@@ -180,7 +182,7 @@ typedef struct {
     //-------------------------------------------------------
     
     _bool _enable_mono;                     // default: stereo mode
-    void (*_isr_call)(void);                // isr call-back
+    void (*_isr_call)(_I2S_StatusEnumT);    // isr call-back
     
 } _I2S_DMA_ConT;
 
@@ -216,6 +218,7 @@ extern _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf);
 extern u16 I2S_TxStream(void *src, u16 cnt);
 extern u8 I2S_GetPusherSize(u16 *re_size);
 extern _I2S_ResT I2S_SetStream(_REFCLKI_FreqEnumT, _REFCLKO_FreqEnumT, _I2S_FsEnumT, _I2S_DataWidthEnumT);
+extern _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit);
 extern _I2S_StatusEnumT I2S_GetTxStatus(void);
 extern _I2S_HwStatusT I2S_GetHwStatus(void);
 extern void I2S_ResetTx(void);

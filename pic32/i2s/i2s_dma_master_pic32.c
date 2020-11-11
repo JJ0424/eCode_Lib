@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.c
 / Author:     JiangJun
-/ Data:       [2019-10-23]
-/ Version:    v1.1
+/ Data:       [2020-11-11]
+/ Version:    v1.32
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 / ---
@@ -11,11 +11,24 @@
 / ---
 / v1.1 [2019-10-23]
 / 1. FIX: _i2s_refclk_set When _I2S_ENABLE_REFCLK_OUT = 0
+/ ---
+/ v1.2
+/ 1. add I2S_SetAudio
+/ 2. FIX: 24BIT error
+/ ---
+/ v1.3
+/ 1. modify ISR call-back Entry
+/ 2. _ISR, remove return code(if locked)
+/ ---
+/ v1.31
+/ 1. FIX: I2S_SetAudio() should ensure status
+/ ---
+/ v1.32
+/ 1. FIX: I2S_Init shoule enable DMA
 /------------------------------------------------------------------------*/
 
 
 #include "i2s_dma_master_pic32.h"
-#include "hw_conf.h"
 
 
 //------------------------------------------------------------
@@ -227,11 +240,11 @@ const u8 _Fs_BRG_Table[4][4] =
 // DMA Distnation Table
 // ---
 // Audio 16bits - 2
-// Audio 24bits - 4
+// Audio 24bits - 3
 // Audio 32bits - 4
 //------------------------------------------------------------
 
-const u8 _Dist_Table[4] = { 2, 2, 4, 4 };
+const u8 _Dist_Table[4] = { 2, 2, 3, 4 };
 
 
 /*----------------------------------------------------------------------
@@ -568,6 +581,8 @@ _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf)
                     _I2S_DMA_Run._tx_pusher[1].tx_buff,     // pusher 2
                     _I2S_DMA_Run._dma_dst_size);
 #endif
+
+    DmaEnable(TRUE);                    // enable PIC32 DMA
                     
 
     //------------------------------------------------------------
@@ -587,7 +602,7 @@ _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf)
  *
  *  Purpose: None.
  *
- *  Entry:      src - u16 or u32 (not support u8 !!!)
+ *  Entry:      src - u16* or u32* (not support u8* !!!)
  *              cnt - the byte size of the src
  *
  *  Exit:    None.
@@ -606,8 +621,8 @@ _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf)
  * 
  *              ------
  *              Min cnt:
- *              16bit - 4,  24/32bit - 8    (normal mode)
- *              16bit - 2,  24/32bit - 4    (mono mode)
+ *              16bit - 4,  24bit - 6, 32bit - 8    (normal mode)
+ *              16bit - 2,  24bit - 3, 32bit - 4    (mono mode)
  *
  *---------------------------------------------------------------------*/
 u16 I2S_TxStream(void *src, u16 cnt)
@@ -765,6 +780,46 @@ _I2S_ResT I2S_SetStream(  _REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refclko
     }
     
     return _RES_OK;
+}
+
+/*----------------------------------------------------------------------
+ *  I2S_SetAudio
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *
+ *  NOTE:    fs: 44.1/ 48/ 88.2/ 96K
+ *           nbit: 16/ 24
+ *---------------------------------------------------------------------*/
+_I2S_ResT I2S_SetAudio(u32 fs, u8 nbit)
+{
+
+    _I2S_DataWidthEnumT dw = 0; _I2S_ResT res = _RES_FAIL;
+    
+
+    //------------------------------------------------------------
+    //              CHECK
+    //------------------------------------------------------------
+    
+    if ((fs != 44100) && (fs != 48000) && (fs != 88200) && (fs != 96000)) return _RES_FAIL;
+    if ((nbit != 16) && (nbit != 24)) return _RES_FAIL;
+
+
+    //------------------------------------------------------------
+    //              Fs Set
+    //------------------------------------------------------------
+
+    if (nbit == 16) dw = _I2S_DATA_WIDTH_16;
+    else dw = _I2S_DATA_WIDTH_24;
+
+    // Set Hw
+    if (fs == 44100) res = I2S_SetStream( _REFCLKI_22_5792MHz, _REFCLKO_11_2896MHz, _I2S_FS_44_1K, dw);
+    else if (fs == 48000) res = I2S_SetStream( _REFCLKI_24_576MHz, _REFCLKO_12_288MHz, _I2S_FS_48K, dw);
+    else if (fs == 88200) res = I2S_SetStream( _REFCLKI_22_5792MHz, _REFCLKO_22_5792MHz, _I2S_FS_88_2K, dw);
+    else if (fs == 96000) res = I2S_SetStream( _REFCLKI_24_576MHz, _REFCLKO_24_576MHz, _I2S_FS_96K, dw);
+
+    return res;     // return
 }
 
 /*----------------------------------------------------------------------
@@ -957,16 +1012,15 @@ void __ISR(_DMA_0_VECTOR + (u8)_I2S_DMA_CHN_1, ipl7AUTO) DmaPusher1Handler(void)
     // Queue Pusher    
     if (_I2S_DMA_Run._locked) 
     {     
-    
-        _I2S_DMA_Run._i2s_status = _I2S_STA_DATA_IDLE;              // 'no-data' status 
-        return; 
+
+        _I2S_DMA_Run._i2s_status = _I2S_STA_DATA_IDLE;              // 'no-data' status        
     }
     else 
     {                
     
         push_id = !push_id;                                    
         if (_I2S_DMA_Run._tx_pusher[push_id].cnt)
-        {            
+        {
             
             // new idle pusher            
             _I2S_DMA_Run._pusher_idle = !push_id;               
@@ -979,7 +1033,7 @@ void __ISR(_DMA_0_VECTOR + (u8)_I2S_DMA_CHN_1, ipl7AUTO) DmaPusher1Handler(void)
         else 
         {
 
-            _I2S_DMA_Run._i2s_status = _I2S_STA_DATA_IDLE;
+            _I2S_DMA_Run._i2s_status = _I2S_STA_DATA_IDLE;          // 'no-data' status
         }
     }
 
@@ -991,7 +1045,7 @@ void __ISR(_DMA_0_VECTOR + (u8)_I2S_DMA_CHN_1, ipl7AUTO) DmaPusher1Handler(void)
     // Macro to Enable it
 #if _I2S_ENABLE_ISR_CALLBACK
 
-    if (_I2S_DMA_Run._conf._isr_call != NULL) (*_I2S_DMA_Run._conf._isr_call)();
+    if (_I2S_DMA_Run._conf._isr_call != NULL) (*_I2S_DMA_Run._conf._isr_call)(_I2S_DMA_Run._i2s_status);
 #endif
 
 }

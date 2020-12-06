@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.c
 / Author:     JiangJun
-/ Data:       [2020-11-11]
-/ Version:    v1.32
+/ Data:       [2020-11-23]
+/ Version:    v1.33
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 / ---
@@ -25,6 +25,9 @@
 / ---
 / v1.32
 / 1. FIX: I2S_Init shoule enable DMA
+/ ---
+/ v1.33
+/ 1. MODIFY: I2S_SetAudio add mclk_512_en para
 /------------------------------------------------------------------------*/
 
 
@@ -791,12 +794,14 @@ _I2S_ResT I2S_SetStream(  _REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refclko
  *
  *  NOTE:    fs: 44.1/ 48/ 88.2/ 96K
  *           nbit: 16/ 24
+ *           mclk512_en: 0 - 256fs, 1 - 512fs
  *---------------------------------------------------------------------*/
-_I2S_ResT I2S_SetAudio(u32 fs, u8 nbit)
+_I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en)
 {
 
-    _I2S_DataWidthEnumT dw = 0; _I2S_ResT res = _RES_FAIL;
-    
+    _I2S_DataWidthEnumT dw = 0;
+    _REFCLKI_FreqEnumT refi = 0; _REFCLKO_FreqEnumT refo = 0; _I2S_FsEnumT i2sfs = 0;
+            
 
     //------------------------------------------------------------
     //              CHECK
@@ -807,19 +812,39 @@ _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit)
 
 
     //------------------------------------------------------------
-    //              Fs Set
+    //              DATA WIDTH
     //------------------------------------------------------------
 
-    if (nbit == 16) dw = _I2S_DATA_WIDTH_16;
-    else dw = _I2S_DATA_WIDTH_24;
+    if (nbit == 16) dw = _I2S_DATA_WIDTH_16; else dw = _I2S_DATA_WIDTH_24;      // 16/ 24BIT
+    
 
-    // Set Hw
-    if (fs == 44100) res = I2S_SetStream( _REFCLKI_22_5792MHz, _REFCLKO_11_2896MHz, _I2S_FS_44_1K, dw);
-    else if (fs == 48000) res = I2S_SetStream( _REFCLKI_24_576MHz, _REFCLKO_12_288MHz, _I2S_FS_48K, dw);
-    else if (fs == 88200) res = I2S_SetStream( _REFCLKI_22_5792MHz, _REFCLKO_22_5792MHz, _I2S_FS_88_2K, dw);
-    else if (fs == 96000) res = I2S_SetStream( _REFCLKI_24_576MHz, _REFCLKO_24_576MHz, _I2S_FS_96K, dw);
+    //------------------------------------------------------------
+    //              FS Para CACL
+    //------------------------------------------------------------
+    
+    if (fs == 44100)
+    {
 
-    return res;     // return
+        // [ 44.1K ]
+        i2sfs = _I2S_FS_44_1K; refi = _REFCLKI_22_5792MHz;
+        if (mclk512_en) refo = _REFCLKO_22_5792MHz; else refo = _REFCLKO_11_2896MHz; 
+    }
+    else if (fs == 48000)
+    {
+
+        // [ 48K ]
+        i2sfs = _I2S_FS_48K; refi = _REFCLKI_24_576MHz;
+        if (mclk512_en) refo = _REFCLKO_24_576MHz; else refo = _REFCLKO_12_288MHz; 
+    }
+    else if (fs == 88200) { i2sfs = _I2S_FS_88_2K; refi = _REFCLKI_22_5792MHz; refo = _REFCLKO_22_5792MHz; }    // [ 88.2K ]
+    else { i2sfs = _I2S_FS_96K; refi = _REFCLKI_24_576MHz; refo = _REFCLKO_24_576MHz; }         // [ 96K ]
+
+
+    //------------------------------------------------------------
+    //              Set Hw
+    //------------------------------------------------------------
+    
+    return I2S_SetStream( refi, refo, i2sfs, dw);
 }
 
 /*----------------------------------------------------------------------

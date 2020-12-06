@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2c.c
 / Author:     JiangJun
-/ Data:       [2020-11-12]
-/ Version:    V1.00
+/ Data:       [2020-12-6]
+/ Version:    V1.01
 /-----------------------------------------------------------------------^^-
 / Software I2C lib.
 / ------
@@ -14,13 +14,16 @@
 / Port NOTE:
 /                     1. EnsureSclHigh() 100us over time.
 /                     2. EnsureSclLow() 300ns over time.
-/                     3. I2cDelayMicroSecs() delay 1us.
+/                     3. I2cDelayUs() delay 1us.
 / you should modify the above three functions to be suitable for i2c time 
 / characteristic.
 / ------
 / PIC32 serial code.(48MHz)
 / ------
 / [ TEST ] - about 200KHz
+/ ------
+/ v1.01 [2020-12-6]
+/ 1. I2cDelayUs() to common function
 /------------------------------------------------------------------------*/
 
 
@@ -73,7 +76,7 @@ BOOL_t EnsureSclLow(void)
 }
 
 /*----------------------------------------------------------------------
- *  I2cDelayMicroSecs
+ *  I2cDelayUs
  *
  *  Purpose: Software delay.
  *  Entry:   us - the count of us to delay.
@@ -86,7 +89,7 @@ BOOL_t EnsureSclLow(void)
  *              50          46.3125us
  *              200         183.8us
  *---------------------------------------------------------------------*/
-void I2cDelayMicroSecs(u8 us)
+void I2cDelayUs(u8 us)
 {
     while (us--)
     {
@@ -118,19 +121,19 @@ void I2cStartCondition(void)
     I2C_SDA_OUT_HIGH();
     // Delay: Tlow
     // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
     
     I2C_SCL_OUT_HIGH();
     EnsureSclHigh();
     // Delay: Tsu.sta
     // Tsu.sta: standard mode: >= 4.7us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SDA_OUT_LOW();
     // Delay: Tf + Thd.sta
     // Tf: standard mode: <= 0.3us; fast mode: <= 0.3us.
     // Thd.sta: standard mode: >= 4.0us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
     
     // lock the SCL line.
     I2C_SCL_OUT_LOW();
@@ -151,19 +154,19 @@ void I2cStopCondition(void)
 
     // Delay: Tlow
     // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SCL_OUT_HIGH();
     EnsureSclHigh();
     // Delay: Tsu.sto
     // Tsu.sto: standard mode: >= 4.0us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SDA_OUT_HIGH();
     // Delay: Tr + Tbuf
     // Tf: standard mode: <= 0.3us; fast mode: <= 0.3us.
     // Tbuf: standard mode: >= 4.7us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 }
 
 /*----------------------------------------------------------------------
@@ -191,7 +194,7 @@ BOOL_t I2cTransmitByte(u8 tran_byt)
         }
         // Delay: Tlow
         // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-        I2cDelayMicroSecs(_I2C_SPD_DELAY);
+        I2cDelayUs(_I2C_SPD_DELAY);
 
         I2C_SCL_OUT_HIGH();
         if (EnsureSclHigh() != TRUE) {
@@ -199,7 +202,7 @@ BOOL_t I2cTransmitByte(u8 tran_byt)
         }
         // Delay: Thigh
         // Thight: standard mode: >= 4.0us; fast mode: >= 0.6us.
-        I2cDelayMicroSecs(_I2C_SPD_DELAY);
+        I2cDelayUs(_I2C_SPD_DELAY);
 
         I2C_SCL_OUT_LOW();
         if (EnsureSclLow() != TRUE) {
@@ -212,7 +215,7 @@ BOOL_t I2cTransmitByte(u8 tran_byt)
 
     // Delay: Tlow
     // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SCL_OUT_HIGH();
     if (EnsureSclHigh() != TRUE) {
@@ -220,7 +223,7 @@ BOOL_t I2cTransmitByte(u8 tran_byt)
     }
     // Delay: Thigh
     // Thight: standard mode: >= 4.0us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     // read SDA line.
     idx = !I2C_SDA_INPUT();
@@ -255,7 +258,7 @@ BOOL_t I2cReceiveByte(u8 *rece_byt, u8 ack_nack)
     {
         // Delay: Tlow
         // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-        I2cDelayMicroSecs(_I2C_SPD_DELAY);
+        I2cDelayUs(_I2C_SPD_DELAY);
 
         I2C_SCL_OUT_HIGH();
         if (EnsureSclHigh() != TRUE) {   
@@ -263,7 +266,7 @@ BOOL_t I2cReceiveByte(u8 *rece_byt, u8 ack_nack)
         }
         // Delay: Thigh
         // Thight: standard mode: >= 4.0us; fast mode: >= 0.6us.
-        I2cDelayMicroSecs(_I2C_SPD_DELAY);
+        I2cDelayUs(_I2C_SPD_DELAY);
 
         byt = (byt << 1) | I2C_SDA_INPUT();
 
@@ -279,7 +282,7 @@ BOOL_t I2cReceiveByte(u8 *rece_byt, u8 ack_nack)
 
     // Delay: Tlow
     // Tlow: standard mode: >= 4.7us; fast mode: >= 1.3us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SCL_OUT_HIGH();
     if (EnsureSclHigh() != TRUE) {
@@ -287,7 +290,7 @@ BOOL_t I2cReceiveByte(u8 *rece_byt, u8 ack_nack)
     }
     // Delay: Thigh
     // Thight: standard mode: >= 4.0us; fast mode: >= 0.6us.
-    I2cDelayMicroSecs(_I2C_SPD_DELAY);
+    I2cDelayUs(_I2C_SPD_DELAY);
 
     I2C_SCL_OUT_LOW();
     if (EnsureSclLow() != TRUE) {

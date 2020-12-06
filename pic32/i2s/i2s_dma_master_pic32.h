@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.h
 / Author:     JiangJun
-/ Data:       [2020-11-11]
-/ Version:    v1.32
+/ Data:       [2020-11-23]
+/ Version:    v1.33
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 /------------------------------------------------------------------------*/
@@ -218,7 +218,7 @@ extern _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf);
 extern u16 I2S_TxStream(void *src, u16 cnt);
 extern u8 I2S_GetPusherSize(u16 *re_size);
 extern _I2S_ResT I2S_SetStream(_REFCLKI_FreqEnumT, _REFCLKO_FreqEnumT, _I2S_FsEnumT, _I2S_DataWidthEnumT);
-extern _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit);
+extern _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en);
 extern _I2S_StatusEnumT I2S_GetTxStatus(void);
 extern _I2S_HwStatusT I2S_GetHwStatus(void);
 extern void I2S_ResetTx(void);

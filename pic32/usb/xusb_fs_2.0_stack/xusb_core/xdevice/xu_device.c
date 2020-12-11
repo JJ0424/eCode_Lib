@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.c
 / Author:     JiangJun
-/ Data:       [2020-7-24]
-/ Version:    v1.22
+/ Data:       [2020-12-11]
+/ Version:    v1.31
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 / ---
@@ -39,6 +39,14 @@
 / ---
 / v1.22
 / 1. add sof number support
+/ ---
+/ v1.30
+/ 1. modify function name
+/ 2. FIX: XUD_DispatchTasks not modify BDT when return _XUD_FRES_NONE
+/ 3. FIX: XUD_SetDescriptor should return NS_RX
+/ ---
+/ v1.31
+/ 1. XUD_Init() attach to the end
 /------------------------------------------------------------------------*/
 
 
@@ -148,8 +156,7 @@ void XUD_Init(fpXUD_TaskReport fp_tsk_rpt)
     //------------------------------------------------------------
 
     XUL_Init(XUD_DispatchTasks);
-    XUL_Attach(TRUE);   // enable device mode
-
+    
 
     //------------------------------------------------------------
     //              Init Var
@@ -177,7 +184,14 @@ void XUD_Init(fpXUD_TaskReport fp_tsk_rpt)
     //------------------------------------------------------------
 
     FpXUD_TaskReport = fp_tsk_rpt;              // xprintf   
-    XUD_RunStatus._p_desc_set = XUC_Init();           
+    XUD_RunStatus._p_desc_set = XUC_Init();
+
+
+    //------------------------------------------------------------
+    //              PULL-UP Enable
+    //------------------------------------------------------------
+    
+    XUL_Attach(TRUE);                           // device mode
 }
 
 /*----------------------------------------------------------------------
@@ -217,7 +231,7 @@ void XUD_DispatchTasks(void)
     {
 
         // mark
-        isrclr |= _XUL_INT_STALL; XUL_EPnRstTx(0);          
+        isrclr |= _XUL_INT_STALL; XUL_EPnTxResume(0);        
     }
     
 
@@ -273,7 +287,7 @@ void XUD_DispatchTasks(void)
 
             // !! ERROR, System ready for next packet
             fres = _XUD_FRES_ER_PARSE_TK_E01;
-        }        
+        }
     }    
 
     
@@ -330,9 +344,8 @@ void XUD_DispatchTasks(void)
         //-------------------------------------------------------
 
         case _XUD_FRES_NOT_SUPPORT_RX:                          // SETUP(0)
-        case _XUD_FRES_SETUP:                                   // SETUP(0)                               
+        case _XUD_FRES_SETUP:                                   // SETUP(0)
         case _XUD_FRES_RX:                                      // OUT
-        case _XUD_FRES_NONE:                                    // SETUP(0)
         
             XUL_EPnReadyRx(&XUL_RxReady, NULL);             
             break;
@@ -688,7 +701,6 @@ XUD_FResT XUD_EP0_Request(XUD_RunStatusT *xrstatus, XUL_TxRxEndT *ptrcp, XUL_TxR
             break;
 
 
-        case _XUD_FRES_NONE:
         case _XUD_FRES_SETUP:
         case _XUD_FRES_NOT_SUPPORT_RX:
 
@@ -1134,7 +1146,7 @@ XUD_FResT XUD_SetDescriptor(XUD_RunStatusT *xrstatus, XUD_DevRequestT *devreq, u
 {
 
     // [ NOT SUPPORT ]
-    return _XUD_FRES_NOT_SUPPORT_TX;
+    return _XUD_FRES_NOT_SUPPORT_RX;
 }
 
 /*----------------------------------------------------------------------

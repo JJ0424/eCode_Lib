@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.c
 / Author:     JiangJun
-/ Data:       [2020-11-23]
-/ Version:    v1.33
+/ Data:       [2020-12-10]
+/ Version:    v1.34
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 / ---
@@ -28,6 +28,9 @@
 / ---
 / v1.33
 / 1. MODIFY: I2S_SetAudio add mclk_512_en para
+/ ---
+/ v1.34
+/ 1. MODIFY: _i2s_refclk_set read frist 
 /------------------------------------------------------------------------*/
 
 
@@ -261,14 +264,7 @@ const u8 _Dist_Table[4] = { 2, 2, 3, 4 };
 static _bool _i2s_refclk_set(_REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refclko)
 {
 
-    u32 source = 0, refcon_flag = 0; u8 div_N = 0; u16 trim_M = 0;  
-
-
-    //------------------------------------------------------------
-    //              Disable REFCLK
-    //------------------------------------------------------------
-
-    OSCREFConfig(0, 0, 0);
+    u32 source = 0, refcon_flag = 0; u8 div_N = 0; u16 trim_M = 0;    
     
 
     //------------------------------------------------------------
@@ -304,11 +300,22 @@ static _bool _i2s_refclk_set(_REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refc
 
 
     //------------------------------------------------------------
-    //              Set to Registers
+    //              Read First
     //------------------------------------------------------------
+
+    // read first
+    if (OSCREFConfigRW(source, (OSCREFConfigFlags)refcon_flag, div_N) == 0) {
+        if (mOSCREFOTRIMRead() == trim_M) return TRUE;
+    }
+
+
+    //------------------------------------------------------------
+    //              Set to Registers
+    //------------------------------------------------------------    
     
-    mOSCREFOTRIMSet(trim_M);                            // set trim M
-    OSCREFConfig(source, (OSCREFConfigFlags)refcon_flag, div_N);
+    OSCREFConfig(0, 0, 0);                                              // must disable first !!!
+    mOSCREFOTRIMSet(trim_M);                                            // set trim M
+    OSCREFConfig(source, (OSCREFConfigFlags)refcon_flag, div_N);        // set source and div N
     
     // ok to set the MCLK and MLCK output
     return TRUE;

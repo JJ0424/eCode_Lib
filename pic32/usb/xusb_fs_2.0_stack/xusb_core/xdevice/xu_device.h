@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.h
 / Author:     JiangJun
-/ Data:       [2020-12-11]
-/ Version:    v1.31
+/ Data:       [2020-12-13]
+/ Version:    v1.32
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 /------------------------------------------------------------------------*/
@@ -207,7 +207,7 @@ typedef struct {
     u8 *_p_conf_desc;                   // point to descriptor array
 
     // str
-    XUD_StrDescT _str_desc[4];          // 0: Lan-ID, 1: manufacturer, 2: product, 3: s/n
+    XUD_StrDescT _str_desc[4];          // 0: Lan-ID, normal: 1-manufacturer, 2-product, 3-s/n
 
 } XUD_DescGroupT;
 

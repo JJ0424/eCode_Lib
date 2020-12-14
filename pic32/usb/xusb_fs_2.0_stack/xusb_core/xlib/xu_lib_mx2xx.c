@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_lib_mx2xx.c
 / Author:     JiangJun
-/ Data:       [2020-7-24]
-/ Version:    v1.24
+/ Data:       [2020-8-7]
+/ Version:    v1.25
 /-----------------------------------------------------------------------^^-
 / PIC32 usb driver layer
 / ---
@@ -28,6 +28,10 @@
 / v1.24
 / 1. add sof frame-number get
 / 2. SOF isr open
+/ ---
+/ v1.25
+/ 1. add XUL_EPnRxResume()
+/ 2. modify XUL_EPnRstTx to XUL_EPnTxResume
 /------------------------------------------------------------------------*/
 
 
@@ -291,14 +295,14 @@ _XUL_ResT XUL_EPnInit(u8 epn, u8 type, u8 en_shk)
 }
 
 /*----------------------------------------------------------------------
- *  XUL_EPnRstTx - clear the BDT with stalled-epn
+ *  XUL_EPnTxResume - clear the BDT with stalled-epn
  *
  *  Purpose: None.
  *  Entry:   None.
  *  Exit:    None.
  *  NOTE:    None.
  *---------------------------------------------------------------------*/
-_XUL_ResT XUL_EPnRstTx(u8 epn)
+_XUL_ResT XUL_EPnTxResume(u8 epn)
 {
 
     //------------------------------------------------------------
@@ -319,6 +323,44 @@ _XUL_ResT XUL_EPnRstTx(u8 epn)
         _XUL_EpBDT[epn]._tx_bdt[1].dlValue = 0;                             
     }
 
+
+    //------------------------------------------------------------
+    //              Clear EPSTALL
+    //------------------------------------------------------------
+    
+    if (PLIB_USB_EPnIsStalled(_XUL_HW_ID, epn)) {           // EPSTALL = 0
+        PLIB_USB_EPnStallClear(_XUL_HW_ID, epn);                
+    }
+
+    // ok to set
+    return _XUL_RES_OK;
+}
+
+/*----------------------------------------------------------------------
+ *  XUL_EPnRxResume - clear the BDT with epn
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+_XUL_ResT XUL_EPnRxResume(u8 epn, u8 eo)
+{
+
+    //------------------------------------------------------------
+    //              Check EP number
+    //------------------------------------------------------------
+
+    if (eo) eo = 1; else eo = 0;
+    if (epn >= _XUL_MAX_EP_NUM) return _XUL_RES_EPN_ERROR;    
+
+
+    //------------------------------------------------------------
+    //              Clear BDT
+    //------------------------------------------------------------
+
+    _XUL_EpBDT[epn]._rx_bdt[eo].dlValue = 0;  
+    
 
     //------------------------------------------------------------
     //              Clear EPSTALL

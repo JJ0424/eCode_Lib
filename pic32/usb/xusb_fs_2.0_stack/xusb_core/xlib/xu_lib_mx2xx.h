@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_lib_mx2xx.h
 / Author:     JiangJun
-/ Data:       [2020-7-24]
-/ Version:    v1.24
+/ Data:       [2020-8-7]
+/ Version:    v1.25
 /-----------------------------------------------------------------------^^-
 /  PIC32 usb driver layer
 /------------------------------------------------------------------------*/
@@ -162,7 +162,8 @@ extern u8 XUL_GetErrorStatus(void);
 extern u8 XUL_PeekErrorStatus(void);
 extern void XUL_ResetErrorStatus(u8 eisr);
 extern _XUL_ResT XUL_EPnInit(u8 epn, u8 type, u8 en_shk);
-extern _XUL_ResT XUL_EPnRstTx(u8 epn);
+extern _XUL_ResT XUL_EPnTxResume(u8 epn);
+extern _XUL_ResT XUL_EPnRxResume(u8 epn, u8 eo);
 extern _XUL_ResT XUL_EPnReadyRx(XUL_RxReadyT *rx_rdy, u8 *svalue);
 extern _XUL_ResT XUL_EPnReadyTx(XUL_TxReadyT *tx_rdy, u8 *svalue);
 extern _XUL_ResT XUL_EPnTxDATA0(u8 epn, u8 eo, void *src, u16 size);

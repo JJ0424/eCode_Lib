@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  xu_device.c
 / Author:     JiangJun
-/ Data:       [2020-12-13]
-/ Version:    v1.32
+/ Data:       [2020-12-14]
+/ Version:    v1.33
 /-----------------------------------------------------------------------^^-
 / usb2.0 middle layer
 / ---
@@ -49,7 +49,10 @@
 / 1. XUD_Init() attach to the end
 / ---
 / v1.32
-/ 2. MOD: some comment
+/ 1. MOD: some comment
+/ ---
+/ v1.33
+/ 1. ADD: XUD_GetDeviceStatus()
 /------------------------------------------------------------------------*/
 
 
@@ -1404,6 +1407,21 @@ XUD_FResT XUD_SyncFrame(XUD_RunStatusT *xrstatus, XUD_DevRequestT *devreq, u8 *d
 {
 
     return _XUD_FRES_NOT_SUPPORT_TX;
+}
+
+/*----------------------------------------------------------------------
+ *  XUD_GetDeviceStatus
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void XUD_GetDeviceStatus(XUD_StatusEnumT *stat, u8 *addr, u16 *fnum)
+{
+
+    *stat = XUD_RunStatus._dstatus;
+    *addr = XUD_RunStatus._usb_addr; *fnum = XUD_RunStatus._sof_frame;    
 }
 
 

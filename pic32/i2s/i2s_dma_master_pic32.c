@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.c
 / Author:     JiangJun
-/ Data:       [2020-12-10]
-/ Version:    v1.34
+/ Data:       [2020-12-29]
+/ Version:    v1.40
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 / ---
@@ -31,6 +31,16 @@
 / ---
 / v1.34
 / 1. MODIFY: _i2s_refclk_set read frist 
+/ ---
+/ v1.40
+/ 1. MOD: some comment
+/ 2. MOD: all 48MHz will has one N/ M Table
+/ 3. ADD: _REFCLKI_POSC_48MHz config
+/ 4. MOD: PBCLK output 24.576MHz will output 11.288MHz
+/ 5. remove 72MHz config
+/ 6. MOD: I2S_SetAudio function
+/ 7. ADD: _I2S_ENABLE_REFCLKO_512FS config
+/ 8. ADD: I2S_GetREFCLK function
 /------------------------------------------------------------------------*/
 
 
@@ -59,39 +69,61 @@ typedef struct {
 const _I2S_FLAG _I2S_FLAG_Table[2] = 
 {
     
-    { _SPI1_TX_IRQ, (void *)&SPI1BUF },         // SPI1    
-    { _SPI2_TX_IRQ, (void *)&SPI2BUF },         // SPI2
+    { _SPI1_TX_IRQ, (void *)&SPI1BUF },                 // SPI1    
+    { _SPI2_TX_IRQ, (void *)&SPI2BUF },                 // SPI2
 };
 
 
 //------------------------------------------------------------
-//              Frequency Check
+//              I2S CONFIG CHECK
 //------------------------------------------------------------
+
+// PBCLK = SYSCLK
 #if _PIC32_PBCLK != _PIC32_SYSCLK
 
   #error "The PBCLK is not equal to SYSCLK! [i2s_dma_master_pic32.c]"
 #endif
 
+// 48MHz
+#if _PIC32_PBCLK != 48000000L
 
-//------------------------------------------------------------
-//              SYSCLK/ PBCLK as the REFCLKI
-//------------------------------------------------------------
-
-// Enable PBCLK as REFCLKI
-#if _I2S_PLLCLK_PBCLK 
-
-  #define _I2S_PLLCLK_AS_SOURCE             OSC_REFOCON_PBCLK      
-#else
-
-  #define _I2S_PLLCLK_AS_SOURCE             OSC_REFOCON_SYSCLK       
+  #error "The PBCLK is not equal to 48MHz! [i2s_dma_master_pic32.c]"
 #endif
+
+// MCLK CONFIG
+#if _I2S_ENABLE_REFCLKI_48MHz && (_I2S_ENABLE_REFCLK_OUT || _I2S_ENABLE_REFCLKO_512FS)
+  
+    #error "The MCLK CONFIG is Error! [i2s_dma_master_pic32.c]"
+#endif
+
+
+//------------------------------------------------------------
+//              48MHz OSC as REFCLKI
+//------------------------------------------------------------
+
+#if _I2S_48MHz_REFCLKI == _I2S_48MHz_PBCLK
+
+  // [ PBCLK ]
+  #define _I2S_48MHz_AS_SOURCE                      OSC_REFOCON_PBCLK               // PBCLK 48MHz
+  
+#elif _I2S_48MHz_REFCLKI == _I2S_48MHz_SYSCLK
+
+  // [ SYSCLK ]
+  #define _I2S_48MHz_AS_SOURCE                      OSC_REFOCON_SYSCLK              // SYSCLK 48MHz
+  
+#elif _I2S_48MHz_REFCLKI == _I2S_48MHz_POSC
+
+  // [ POSC 48MHz ]
+  #define _I2S_48MHz_AS_SOURCE                      OSC_REFOCON_POSC                // POSC 48MHz
+  
+#endif /* _I2S_48MHz_REFCLKI */
 
 
 //------------------------------------------------------------
 //              Extern REFCLK as REFCLKI
 //------------------------------------------------------------
 
-#define _I2S_REFCLK_AS_SOURCE               (8 << _REFOCON_ROSEL_POSITION)      // PLIB BUG!
+#define _I2S_REFCLK_AS_SOURCE                       (8 << _REFOCON_ROSEL_POSITION)              // PLIB BUG!
 
 
 //------------------------------------------------------------
@@ -144,6 +176,51 @@ const u32 _i2s_dat_width_conf_TABLE[4] =
 
 
 //------------------------------------------------------------
+// FS And REFCLKI/ REFCLKO Table
+//------------------------------------------------------------
+
+#if _I2S_ENABLE_REFCLKI_48MHz == 1
+
+// SYSCLK/ PBCK/ POSC as REFCLKI
+const u8 _fs_refclk_TABLE[4][2] = 
+{
+
+    {_REFCLKI_48MHz,        _REFCLKO_11_2896MHz },          // fs: 44.1K
+    {_REFCLKI_48MHz,        _REFCLKO_12_288MHz },           // fs: 48K
+    {_REFCLKI_48MHz,        _REFCLKO_11_2896MHz },          // fs: 88.2K
+    {_REFCLKI_48MHz,        _REFCLKO_12_288MHz },           // fs: 96K
+};
+
+#else
+#if _I2S_ENABLE_REFCLKO_512FS == 1
+
+// SYSCLK/ PBCK/ POSC as REFCLKI, and REFCLKO is 512 FS
+const u8 _fs_refclk_TABLE[4][2] = 
+{
+
+    {_REFCLKI_22_5792MHz,   _REFCLKO_22_5792MHz },          // fs: 44.1K
+    {_REFCLKI_24_576MHz,    _REFCLKO_24_576MHz },           // fs: 48K
+    {_REFCLKI_22_5792MHz,   _REFCLKO_22_5792MHz },          // fs: 88.2K
+    {_REFCLKI_24_576MHz,    _REFCLKO_24_576MHz },           // fs: 96K
+};
+
+#else
+
+// SYSCLK/ PBCK/ POSC as REFCLKI, and REFCLKO is 512 FS
+const u8 _fs_refclk_TABLE[4][2] = 
+{
+
+    {_REFCLKI_22_5792MHz,   _REFCLKO_11_2896MHz },          // fs: 44.1K
+    {_REFCLKI_24_576MHz,    _REFCLKO_12_288MHz },           // fs: 48K
+    {_REFCLKI_22_5792MHz,   _REFCLKO_22_5792MHz },          // fs: 88.2K
+    {_REFCLKI_24_576MHz,    _REFCLKO_24_576MHz },           // fs: 96K
+};
+
+#endif /* _I2S_ENABLE_REFCLKO_512FS */
+#endif /* _I2S_ENABLE_REFCLKI_48MHz */
+
+
+//------------------------------------------------------------
 // N and M Table
 // ---
 // REFCLK O = REFCLK I / 2/ (N + M/512) [ IF N = 0, REFCLKO = REFCLKI! ]
@@ -155,68 +232,33 @@ const u32 _i2s_dat_width_conf_TABLE[4] =
 // 22.5792          0, 0            NC          1, 0        NC
 // 24.576           NC              0, 0        NC          1, 0
 // 48               1, 32           NC          2, 64       1, 488
-// 72               1, 304          1, 238      3, 97       2, 476
 // ------
-// SYSCLK ---> REFCLKO Error!!!
+// 48MHz OSC -> Fs
 // ---
-// [1] 48MHz SYSCLK
 // 22.5792MHz, N = 1, M = 32    (22.588235MHz)
-// 24.576MHz ( CAN NOT USED!! )
+// 24.576MHz,  * error output
 // 11.2896MHz, N = 2, M = 64    (11.294118MHz)
-// 12.288MHz,  N = 1, M = 488   (0%)
-// ---
-// [2] 72MHz SYSCLK
-// 22.5792MHz, N = 1, M = 304 (22.588235MHz)
-// 24.576MHz, N = 1, M = 238 (0%)
-// 11.2896MHz, N = 3, M = 97    (11.287201MHz)
-// 12.288MHz,  N = 2, M = 476   (0%)
+// 12.288MHz,  N = 1, M = 488   (12.288MHz) (0%)
 //------------------------------------------------------------
 
-#if _PIC32_SYSCLK == 48000000L                              // SYSCLK = 48MHz
+// N - 0xFF means 'NC'
+const u8 _refclk_N_TABLE[3][4] = 
+{
 
-  // N - 0xFF means 'NC'
-  const u8 _refclk_N_TABLE[3][4] = 
-  {
+    { 0,          0xFF,       1,          0xFF    },      
+    { 0xFF,       0,          0xFF,       1       },
+    { 1,          0xFF,       2,          1       },
+};
+
+// M - 0xFFFF means 'NC'
+const u16 _refclk_M_TABLE[3][4] = 
+{
+
+    { 0,          0xFFFF,     0,          0xFFFF  },
+    { 0xFFFF,     0,          0xFFFF,     0       },
+    { 32,         0xFFFF,     64,         488     },
+};  
   
-      { 0,          0xFF,       1,          0xFF    },      
-      { 0xFF,       0,          0xFF,       1       },
-      { 1,          0xFF,       2,          1       },
-  };
-
-  // M - 0xFFFF means 'NC'
-  const u16 _refclk_M_TABLE[3][4] = 
-  {
-
-      { 0,          0xFFFF,     0,          0xFFFF  },
-      { 0xFFFF,     0,          0xFFFF,     0       },
-      { 32,         0xFFFF,     64,         488     },
-  };  
-  
-#elif _PIC32_SYSCLK == 72000000L                            // SYSCLK = 72MHz [ NOT TEST! ]
-
-  // N - 0xFF means 'NC'
-  const u8 _refclk_N_TABLE[3][4] = 
-  {
-  
-      { 0,          0xFF,       1,          0xFF    },      // 0xFFFF means 'NC'
-      { 0xFF,       0,          0xFF,       1       },
-      { 1,          1,          3,          2       },
-  };
-
-  // M - 0xFFFF means 'NC'
-  const u16 _refclk_M_TABLE[3][4] = 
-  {
-
-      { 0,          0xFFFF,     0,          0xFFFF  },
-      { 0xFFFF,     0,          0xFFFF,     0       },
-      { 304,        238,        97,         476     },
-  };  
-  
-#else 
-
-  #error "SYSCLK is error! [i2s_dma_master_pic32.c]"        // SYSCLK error!
-#endif /* _PIC32_SYSCLK */
-
 
 //------------------------------------------------------------
 // BRG Table - 64 Frame Mode
@@ -235,7 +277,7 @@ const u32 _i2s_dat_width_conf_TABLE[4] =
 const u8 _Fs_BRG_Table[4][4] = 
 {
 
-    {   3,          0xFF,       1,          0xFF    },    // 0xFF means 'NC'
+    {   3,          0xFF,       1,          0xFF    },      // 0xFF means 'NC'
     {   0xFF,       3,          0xFF,       1       },
     {   1,          0xFF,       0,          0xFF    },
     {   0xFF,       1,          0xFF,       0       },
@@ -290,13 +332,13 @@ static _bool _i2s_refclk_set(_REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refc
 #endif    
     
     // source select
-    if (refclki == _REFCLKI_PLLCLK) source = _I2S_PLLCLK_AS_SOURCE;
+    if (refclki == _REFCLKI_48MHz) source = _I2S_48MHz_AS_SOURCE;
     else source = _I2S_REFCLK_AS_SOURCE;
 
     // N and M
     div_N = _refclk_N_TABLE[(u8)refclki][(u8)refclko];
     trim_M = _refclk_M_TABLE[(u8)refclki][(u8)refclko];
-    if ((div_N == 0xFF) || (trim_M ==0xFFFF)) return FALSE;             // error with combination
+    if ((div_N == 0xFF) || (trim_M == 0xFFFF)) return FALSE;            // error with combination
 
 
     //------------------------------------------------------------
@@ -801,9 +843,8 @@ _I2S_ResT I2S_SetStream(  _REFCLKI_FreqEnumT refclki, _REFCLKO_FreqEnumT refclko
  *
  *  NOTE:    fs: 44.1/ 48/ 88.2/ 96K
  *           nbit: 16/ 24
- *           mclk512_en: 0 - 256fs, 1 - 512fs
  *---------------------------------------------------------------------*/
-_I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en)
+_I2S_ResT I2S_SetAudio(u32 fs, u8 nbit)
 {
 
     _I2S_DataWidthEnumT dw = 0;
@@ -829,22 +870,11 @@ _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en)
     //              FS Para CACL
     //------------------------------------------------------------
     
-    if (fs == 44100)
-    {
-
-        // [ 44.1K ]
-        i2sfs = _I2S_FS_44_1K; refi = _REFCLKI_22_5792MHz;
-        if (mclk512_en) refo = _REFCLKO_22_5792MHz; else refo = _REFCLKO_11_2896MHz; 
-    }
-    else if (fs == 48000)
-    {
-
-        // [ 48K ]
-        i2sfs = _I2S_FS_48K; refi = _REFCLKI_24_576MHz;
-        if (mclk512_en) refo = _REFCLKO_24_576MHz; else refo = _REFCLKO_12_288MHz; 
-    }
-    else if (fs == 88200) { i2sfs = _I2S_FS_88_2K; refi = _REFCLKI_22_5792MHz; refo = _REFCLKO_22_5792MHz; }    // [ 88.2K ]
-    else { i2sfs = _I2S_FS_96K; refi = _REFCLKI_24_576MHz; refo = _REFCLKO_24_576MHz; }         // [ 96K ]
+    if (fs == 44100) i2sfs = _I2S_FS_44_1K;                                     // [ 44.1K ]    
+    else if (fs == 48000) i2sfs = _I2S_FS_48K;                                  // [ 48K ]    
+    else if (fs == 88200) i2sfs = _I2S_FS_88_2K;                                // [ 88.2K ]
+    else i2sfs = _I2S_FS_96K;                                                   // [ 96K ]
+    refi = _fs_refclk_TABLE[i2sfs][0]; refo = _fs_refclk_TABLE[i2sfs][1];       // [ REFCLKI and REFCLKO ]
 
 
     //------------------------------------------------------------
@@ -852,6 +882,25 @@ _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en)
     //------------------------------------------------------------
     
     return I2S_SetStream( refi, refo, i2sfs, dw);
+}
+
+/*----------------------------------------------------------------------
+ *  I2S_GetREFCLK
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+_I2S_ResT I2S_GetREFCLK(_I2S_FsEnumT i2sfs, _REFCLKI_FreqEnumT *refi, _REFCLKO_FreqEnumT *refo)
+{
+
+    //------------------------------------------------------------
+    //              REFCLKI and REFCLKO
+    //------------------------------------------------------------
+    
+    *refi = _fs_refclk_TABLE[i2sfs][0]; *refo = _fs_refclk_TABLE[i2sfs][1];     // [ REFCLKI and REFCLKO ]
+    return _RES_OK;
 }
 
 /*----------------------------------------------------------------------

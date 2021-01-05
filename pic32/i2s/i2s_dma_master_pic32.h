@@ -2,11 +2,12 @@
 /*----------------------------------------------------------------------^^-
 / File name:  i2s_dma_master_pic32.h
 / Author:     JiangJun
-/ Data:       [2020-12-10]
-/ Version:    v1.34
+/ Data:       [2020-12-29]
+/ Version:    v1.40
 /-----------------------------------------------------------------------^^-
 / i2s master driver
 /------------------------------------------------------------------------*/
+
 
 #ifndef _I2S_DMA_MASTER_PIC32_H
 #define _I2S_DMA_MASTER_PIC32_H
@@ -20,12 +21,20 @@
 //              CONFIG
 //------------------------------------------------------------
 
-#define _I2S_DMA_BUFFER_SIZE                (1 * 1024)      // Unit: Byte
-#define _I2S_ENABLE_REFCLK_OUT              1
+#define _I2S_DMA_BUFFER_SIZE                (1 * 1024)              // Unit: Byte
 #define _I2S_ENABLE_ISR_CALLBACK            1
 
-// use PBCLK as REFCLKI
-#define _I2S_PLLCLK_PBCLK                   0               // SYSCLK as default
+// REFCLKI and REFCLKO
+#define _I2S_ENABLE_REFCLK_OUT              0
+#define _I2S_ENABLE_REFCLKO_512FS           0
+#define _I2S_ENABLE_REFCLKI_48MHz           1                       // 48MHz as REFCLKI source
+
+// 48MHz Osc Select
+#define _I2S_48MHz_PBCLK                    1
+#define _I2S_48MHz_SYSCLK                   2
+#define _I2S_48MHz_POSC                     3
+
+#define _I2S_48MHz_REFCLKI                  _I2S_48MHz_POSC         // POSC as default
 
 
 //-------------------------------------------------------
@@ -64,7 +73,7 @@ typedef enum {
 
     _REFCLKI_22_5792MHz = 0,        // extern source-osc Hi-Res
     _REFCLKI_24_576MHz,             // extern source-osc Hi-Res    
-    _REFCLKI_PLLCLK,                // SYSCLK or PBCLK [ PBCLK most time = SYSCLK ]
+    _REFCLKI_48MHz,                 // SYSCLK/ PBCLK/ POSC 48MHz
 
 } _REFCLKI_FreqEnumT;
 
@@ -218,7 +227,8 @@ extern _I2S_ResT I2S_Init(_I2S_DMA_ConT *conf);
 extern u16 I2S_TxStream(void *src, u16 cnt);
 extern u8 I2S_GetPusherSize(u16 *re_size);
 extern _I2S_ResT I2S_SetStream(_REFCLKI_FreqEnumT, _REFCLKO_FreqEnumT, _I2S_FsEnumT, _I2S_DataWidthEnumT);
-extern _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit, u8 mclk512_en);
+extern _I2S_ResT I2S_SetAudio(u32 fs, u8 nbit);
+extern _I2S_ResT I2S_GetREFCLK(_I2S_FsEnumT i2sfs, _REFCLKI_FreqEnumT *refi, _REFCLKO_FreqEnumT *refo);
 extern _I2S_StatusEnumT I2S_GetTxStatus(void);
 extern _I2S_HwStatusT I2S_GetHwStatus(void);
 extern void I2S_ResetTx(void);

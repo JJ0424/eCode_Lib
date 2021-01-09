@@ -35,12 +35,11 @@
 / v1.40
 / 1. MOD: some comment
 / 2. MOD: all 48MHz will has one N/ M Table
-/ 3. ADD: _REFCLKI_POSC_48MHz config
-/ 4. MOD: PBCLK output 24.576MHz will output 11.288MHz
-/ 5. remove 72MHz config
-/ 6. MOD: I2S_SetAudio function
-/ 7. ADD: _I2S_ENABLE_REFCLKO_512FS config
-/ 8. ADD: I2S_GetREFCLK function
+/ 3. ADD: _REFCLKI_48MHz config
+/ 4. remove 72MHz config
+/ 5. MOD: I2S_SetAudio function
+/ 6. ADD: _I2S_ENABLE_REFCLKO_512FS config
+/ 7. ADD: I2S_GetREFCLK function
 /------------------------------------------------------------------------*/
 
 

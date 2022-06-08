@@ -2,15 +2,14 @@
 /*----------------------------------------------------------------------^^-
 / File name:  keypad_lp.h
 / Author:     JiangJun
-/ Data:       2018/3/17
-/ Version:    v1.0
+/ Data:       [2022-4-22]
+/ Version:    v1.2
 /-----------------------------------------------------------------------^^-
 / Keypad Common Lib
-/ ---
-/ Support:
-/ 1. Long Push-down Function
-/ 2. Key Push-down Time record
 /------------------------------------------------------------------------*/
+
+#ifndef _KEYPAD_LP_H
+#define _KEYPAD_LP_H
 
 #include "main.h"
 
@@ -18,19 +17,12 @@
 //             KEYPAD CONFIG
 //------------------------------------------------------------
 
-#define _KEYPAD_BUFFER_SIZE         4
+// BUFFER WITH KEYPAD
+#define _KEYPAD_BUFFER_SIZE                     4
 
-//------------------------------------------------------------
-//             KEYPAD Value Define
-//------------------------------------------------------------
+// The Count of the Key
+#define _KEYPAD_TOTAL_KEYS                      4
 
-typedef enum {
-
-    _KEY_PUSH_NONE = 0,
-    _KEY_PUSH_TOP,
-    _KEY_PUSH_BOTTOM,
-    
-} KeyPushValueT;
 
 //------------------------------------------------------------
 //             KEYPAD Data Struct
@@ -38,29 +30,49 @@ typedef enum {
 
 typedef struct {
 
-    KeyPushValueT value;
-    u16 key_push_cnt;
-    u32 key_push_time;      // time = cnt * scan-period 
+    u8 key_idx;             // Key ID
+    u8 key_value;           // 0: No Key, other: Key Value
+    u16 key_push_cnt;       // Counter
+    u32 key_push_time;      // Time = key_push_cnt * key_scan_period
     
 } KeyPushT;
+
+typedef struct {
+
+    u8 key_last_value;
+    u16 key_scan_cnt;
+    
+} KeyCalaT;
 
 // Keypad Data struct
 typedef struct {
 
+    // The Keypad Buffer
+    u8 read_idx, write_idx;  
+    u16 key_scan_period;   
     KeyPushT key_push_buffer[_KEYPAD_BUFFER_SIZE];
-    u8 read_idx, write_idx;
-    KeyPushValueT key_last_push;
-    u16 key_scan_period;
-    u16 key_scan_cnt;
+
+    // The Cala-BuF with one KEY
+    KeyCalaT key_cala_buffer[_KEYPAD_TOTAL_KEYS];
     
 } KeypadPushT;
 
 
-extern void KeypadInit(u16 scan_period);
+//------------------------------------------------------------
+//             PORT Function Pointer
+//------------------------------------------------------------
+
+// Read the Low-Level IO
+typedef void (*fpKeyIO_Read)(u8 *out, u8 key_cnt);
+
+
+extern void KeypadInit(fpKeyIO_Read fp_io_read, u16 scan_period);
 extern void KeypadReset(void);
 extern void KeypadTimeProc(void);
 extern _bool KeypadGetValue(KeyPushT *key_push);
+extern void KeypadGetStatus(u8 key_idx, u8 *key_value, u32 *key_push_time);
 
+#endif
 
 //-------------------------------------------------
 //-------------End of file-------------------------

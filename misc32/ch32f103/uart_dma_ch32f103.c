@@ -1,11 +1,11 @@
 
 /*----------------------------------------------------------------------^^-
-/ File name:  uart_dma_f103.c
+/ File name:  uart_dma_ch32f103.c
 / Author:     JiangJun
 / Data:       [2022-6-13]
 / Version:    v1.3
 /-----------------------------------------------------------------------^^-
-/ STM32F103 UART DMA Driver
+/ ch32f103 uart driver based by STM32F103
 / ---
 / v1.2 [2019-1-3]
 / 1. add 19200 baudrate support
@@ -16,7 +16,7 @@
 /------------------------------------------------------------------------*/
 
 
-#include "uart_dma_f103.h"
+#include "uart_dma_ch32f103.h"
 #include "string.h"
 
 
@@ -136,7 +136,7 @@ void UartInit(UartRunT *uart_dma)
         - Priority: VeryHigh
     */
         
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&(uart_dma->USARTx->DR);                  
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&(uart_dma->USARTx->DATAR);                  
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;

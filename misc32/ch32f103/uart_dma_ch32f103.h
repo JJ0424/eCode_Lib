@@ -1,15 +1,15 @@
 
 /*----------------------------------------------------------------------^^-
-/ File name:  uart_dma_f103.h
+/ File name:  uart_dma_ch32f103.h
 / Author:     JiangJun
 / Data:       [2022-6-13]
 / Version:    v1.3
 /-----------------------------------------------------------------------^^-
-/ STM32F103 UART DMA Driver
+/ ch32f103 uart driver based by STM32F103
 /------------------------------------------------------------------------*/
 
-#ifndef _UART_DMA_F103_H
-#define _UART_DMA_F103_H
+#ifndef _UART_DMA_CH32F103_H
+#define _UART_DMA_CH32F103_H
 
 #include "main.h"
 

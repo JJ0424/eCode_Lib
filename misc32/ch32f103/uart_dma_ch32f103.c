@@ -310,15 +310,15 @@ _bool UartTxIsEmpty(UartRunT *uart_dma)
     s8 idx = _uart_get_const_idx(uart_dma->USARTx);
 
     // Index check
-    if (idx < 0) { return FALSE; }
+    if (idx < 0) { return _false; }
 
     // DMA BuF check
     if (DMA_GetCurrDataCounter(UartDmaConst[idx].tx_channel) == 0) {
 
-        return TRUE;
+        return _true;
     }
 
-    return FALSE;
+    return _false;
 }
  
 /*----------------------------------------------------------------------

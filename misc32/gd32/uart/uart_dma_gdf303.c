@@ -2,10 +2,13 @@
 /*----------------------------------------------------------------------^^-
 / File name:  uart_dma_gdf303.c
 / Author:     JiangJun
-/ Data:       2022/4/11
-/ Version:    v1.0
+/ Data:       2022/6/10
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 / GD32F303 UART driver
+/ ---
+/ v1.1 [2022-6-10]
+/ 1. add UartStop function
 /------------------------------------------------------------------------*/
 
 
@@ -233,6 +236,29 @@ void UartOpen(UartRunT *uart_dma)
 
     // Enable UART
     usart_enable(uart_dma->usart_periph);
+}
+
+/*----------------------------------------------------------------------
+ *  UartStop
+ *
+ *  Purpose: None.
+ *  Entry:   None.
+ *  Exit:    None.
+ *  NOTE:    None.
+ *---------------------------------------------------------------------*/
+void UartStop(UartRunT *uart_dma)
+{
+
+    s8 idx = _uart_get_const_idx(uart_dma->usart_periph);
+
+    // Index check
+    if (idx < 0) { return; }
+    
+    // Disable Rx Channel
+    dma_channel_disable(UartDmaConst[idx].dma_periph, UartDmaConst[idx].rx_channel);
+
+    // Disable UART
+    usart_disable(uart_dma->usart_periph);
 }
 
 /*----------------------------------------------------------------------

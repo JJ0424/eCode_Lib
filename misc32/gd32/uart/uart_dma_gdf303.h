@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  uart_dma_gdf303.h
 / Author:     JiangJun
-/ Data:       2022/4/11
-/ Version:    v1.0
+/ Data:       2022/6/10
+/ Version:    v1.1
 /-----------------------------------------------------------------------^^-
 / GD32F303 UART driver
 /------------------------------------------------------------------------*/
@@ -66,6 +66,7 @@ typedef struct {
 
 extern void UartInit(UartRunT *uart_dma);
 extern void UartOpen(UartRunT *uart_dma);
+extern void UartStop(UartRunT *uart_dma);
 extern u16 UartTx(UartRunT *uart_dma, u8 *src_buf, u16 cnt);
 extern _bool UartTxIsEmpty(UartRunT *uart_dma);
 extern void UartRxTimeProc(UartRunT *uart_dma);

@@ -2,8 +2,8 @@
 /*----------------------------------------------------------------------^^-
 / File name:  keypad_lp.c
 / Author:     JiangJun
-/ Data:       [2022-6-14]
-/ Version:    v1.21
+/ Data:       [2022-9-1]
+/ Version:    v1.30
 /-----------------------------------------------------------------------^^-
 / Keypad Common Lib
 / ---
@@ -20,6 +20,9 @@
 / ---
 / v1.21 [2022-6-14]
 / 1. adpter to keil
+/ ---
+/ v1.30
+/ 1. FIX: init and reset should init buffer
 /------------------------------------------------------------------------*/
 
 #include "keypad_lp.h"
@@ -47,10 +50,18 @@ void KeypadInit(fpKeyIO_Read fp_io_read, u16 scan_period)
     for (idx = 0; idx < _KEYPAD_TOTAL_KEYS; idx++)
     {
 
-        KeypadPush.key_cala_buffer[idx].key_last_value = 0;
-        KeypadPush.key_cala_buffer[idx].key_scan_cnt = 0;
+        KeypadPush.key_cala_buffer[idx].key_last_value = 0; KeypadPush.key_cala_buffer[idx].key_scan_cnt = 0;        
     }
-    
+
+    // Init the Buffer
+    for (idx = 0; idx < _KEYPAD_BUFFER_SIZE; idx++)
+    {
+
+        KeypadPush.key_push_buffer[idx].key_idx = 0; KeypadPush.key_push_buffer[idx].key_value = 0;        
+        KeypadPush.key_push_buffer[idx].key_push_cnt = 0; KeypadPush.key_push_buffer[idx].key_push_time = 0;                       
+    }
+
+    // r/w index to 0
 	KeypadPush.key_scan_period = scan_period;
 	KeypadPush.read_idx = 0; KeypadPush.write_idx = 0;
 
@@ -75,10 +86,18 @@ void KeypadReset(void)
     for (idx = 0; idx < _KEYPAD_TOTAL_KEYS; idx++)
     {
 
-        KeypadPush.key_cala_buffer[idx].key_last_value = 0;
-        KeypadPush.key_cala_buffer[idx].key_scan_cnt = 0;
+        KeypadPush.key_cala_buffer[idx].key_last_value = 0; KeypadPush.key_cala_buffer[idx].key_scan_cnt = 0;        
     }
-    
+
+    // Init the Buffer
+    for (idx = 0; idx < _KEYPAD_BUFFER_SIZE; idx++)
+    {
+
+        KeypadPush.key_push_buffer[idx].key_idx = 0; KeypadPush.key_push_buffer[idx].key_value = 0;        
+        KeypadPush.key_push_buffer[idx].key_push_cnt = 0; KeypadPush.key_push_buffer[idx].key_push_time = 0;                       
+    }
+
+    // r/w index to 0
 	KeypadPush.read_idx = 0; KeypadPush.write_idx = 0;
 }
 
